@@ -1,5 +1,8 @@
 #pragma once
+
 #include <Windows.h>
+#include <memory>
+#include "d3dclass.h"
 
 constexpr bool FULL_SCREEN = false;
 constexpr bool VSYNC_ENABLED = true;
@@ -19,5 +22,7 @@ namespace d3d11renderer
 
 	private:
 		bool render();
+	private:
+		std::shared_ptr<d3d11renderer::d3dclass> m_d3d;
 	};
 }

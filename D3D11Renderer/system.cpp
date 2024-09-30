@@ -13,7 +13,7 @@ d3d11renderer::system::system()
 	initialize_windows(screenWidth, screenHeight);
 
 	m_input = std::make_shared<d3d11renderer::input>();
-	m_application = std::make_shared<d3d11renderer::application>(0, 0, nullptr);
+	m_application = std::make_shared<d3d11renderer::application>(screenWidth, screenHeight, m_hwnd);
 }
 
 d3d11renderer::system::~system()

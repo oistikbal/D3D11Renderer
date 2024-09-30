@@ -3,7 +3,6 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <memory>
-#include <wrl/client.h>
 
 #include "Core/input.h"
 #include "Core/application.h"
