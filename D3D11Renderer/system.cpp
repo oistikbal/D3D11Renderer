@@ -12,8 +12,16 @@ d3d11renderer::system::system()
 
 	initialize_windows(screenWidth, screenHeight);
 
-	m_input = std::make_shared<d3d11renderer::input>();
-	m_application = std::make_shared<d3d11renderer::application>(screenWidth, screenHeight, m_hwnd);
+	try
+	{
+		m_input = std::make_shared<d3d11renderer::input>();
+		m_application = std::make_shared<d3d11renderer::application>(screenWidth, screenHeight, m_hwnd);
+	}
+	catch (const std::exception& e)
+	{
+		MessageBoxA(m_hwnd, e.what(), "Error", MB_OK | MB_ICONERROR);
+		PostQuitMessage(0);
+	}
 }
 
 d3d11renderer::system::~system()

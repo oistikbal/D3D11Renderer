@@ -65,6 +65,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -84,10 +87,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>d3d11.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <FxCompile>
+      <ShaderModel>5.0</ShaderModel>
+    </FxCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\application.cpp" />
+    <ClCompile Include="Core\camera.cpp" />
+    <ClCompile Include="Core\color_shader.cpp" />
     <ClCompile Include="Core\d3dclass.cpp" />
+    <ClCompile Include="Core\model.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_dx11.cpp" />
@@ -100,7 +109,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\application.h" />
+    <ClInclude Include="Core\camera.h" />
+    <ClInclude Include="Core\color_shader.h" />
     <ClInclude Include="Core\d3dclass.h" />
+    <ClInclude Include="Core\model.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_dx11.h" />
@@ -111,6 +123,16 @@
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="Core\input.h" />
     <ClInclude Include="system.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\colorvs.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\colorps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

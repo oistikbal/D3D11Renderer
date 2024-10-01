@@ -76,10 +76,10 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	if (error != 0)
 		throw std::runtime_error("Failed to convert video card description to string");
 
-	OutputDebugStringW(adapterDesc.Description);
 
 	delete[] displayModeList;
 	displayModeList = nullptr;
+
 
 	// Initialize swap chain description
 	swapChainDesc.BufferCount = 1;
@@ -108,10 +108,10 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swapChainDesc.Flags = 0;
 
-	featureLevel = D3D_FEATURE_LEVEL_11_1;
+	featureLevel = D3D_FEATURE_LEVEL_11_0;
 
 	// Create Device and Swap Chain
-	result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, &featureLevel, 1,
+	result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, &featureLevel, 1,
 		D3D11_SDK_VERSION, &swapChainDesc, m_swapChain.GetAddressOf(), m_device.GetAddressOf(), nullptr, m_deviceContext.GetAddressOf());
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create device and swap chain");
@@ -125,8 +125,9 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	result = m_device->CreateRenderTargetView(backBufferPtr.Get(), nullptr, m_renderTargetView.GetAddressOf());
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create render target view");
+	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
-	// Initialize depth buffer description
+	// Set up the description of the depth buffer.
 	depthBufferDesc.Width = screenWidth;
 	depthBufferDesc.Height = screenHeight;
 	depthBufferDesc.MipLevels = 1;
@@ -192,16 +193,29 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	rasterDesc.ScissorEnable = false;
 	rasterDesc.SlopeScaledDepthBias = 0.0f;
 
-	result = m_device->CreateRasterizerState(&rasterDesc, &m_rasterState);
+	result = m_device->CreateRasterizerState(&rasterDesc, m_rasterState.GetAddressOf());
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create rasterizer state");
 
 	m_deviceContext->RSSetState(m_rasterState.Get());
 
-	// Setup projection matrix
+	m_viewport.Width = (float)screenWidth;
+	m_viewport.Height = (float)screenHeight;
+	m_viewport.MinDepth = 0.0f;
+	m_viewport.MaxDepth = 1.0f;
+	m_viewport.TopLeftX = 0.0f;
+	m_viewport.TopLeftY = 0.0f;
+
+	// Create the viewport.
+	m_deviceContext->RSSetViewports(1, &m_viewport);
 	fieldOfView = DirectX::XM_PIDIV4; // 45 degrees
 	screenAspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
 	m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, screenNear, screenDepth);
+
+	m_worldMatrix = DirectX::XMMatrixIdentity();
+
+	m_orthoMatrix = DirectX::XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, screenNear, screenDepth);
+
 
 	m_isInitialized = true;
 }
