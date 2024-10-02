@@ -41,6 +41,7 @@ namespace d3d11renderer
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthStencilState;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterState;
+		Microsoft::WRL::ComPtr<ID3D11BlendState> m_blendState;
 		DirectX::XMMATRIX m_projectionMatrix;
 		DirectX::XMMATRIX m_worldMatrix;
 		DirectX::XMMATRIX m_orthoMatrix;

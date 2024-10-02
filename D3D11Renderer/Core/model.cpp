@@ -1,9 +1,14 @@
 #include "model.h"
 #include <stdexcept>
 
-model::model(ID3D11Device* device)
+model::model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename)
 {
 	auto result = initialize_buffers(device);
+	if (!result) {
+		throw std::runtime_error("Failed to initialize buffers");
+	}
+
+	result = load_texture(device, deviceContext, filename);
 	if (!result) {
 		throw std::runtime_error("Failed to initialize buffers");
 	}
@@ -21,6 +26,11 @@ void model::render(ID3D11DeviceContext* deviceContext)
 int model::get_index_count()
 {
 	return m_indexCount;
+}
+
+ID3D11ShaderResourceView* model::get_texture()
+{
+	return m_texture->get_texture();
 }
 
 bool model::initialize_buffers(ID3D11Device* device)
@@ -52,13 +62,13 @@ bool model::initialize_buffers(ID3D11Device* device)
 	}
 
 	vertices[0].position = DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
-	vertices[0].color = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[0].texture = DirectX::XMFLOAT2(0.0f, 1.0f);
 
 	vertices[1].position = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);  // Top middle.
-	vertices[1].color = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[1].texture = DirectX::XMFLOAT2(0.5f, 0.0f);
 
 	vertices[2].position = DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
-	vertices[2].color = DirectX::XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
+	vertices[2].texture = DirectX::XMFLOAT2(1.0f, 1.0f);
 
 	// Load the index array with data.
 	indices[0] = 0;  // Bottom left.
@@ -134,4 +144,19 @@ void model::render_buffers(ID3D11DeviceContext* deviceContext)
 	deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	return;
+}
+
+bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename)
+{
+	try
+	{
+		m_texture = std::make_shared<texture>(device, deviceContext, filename);
+		return true;
+	}
+	catch (const std::exception&)
+	{
+		return false;
+	}
+
+	return true;
 }

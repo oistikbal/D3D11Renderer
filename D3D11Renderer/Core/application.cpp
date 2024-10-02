@@ -6,11 +6,11 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 	{
 		m_d3d = std::make_shared<d3d11renderer::d3dclass>(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 		m_camera = std::make_shared<camera>();
-		m_camera->set_position(0.0f, 0.0f, -5.0f);
+		m_camera->set_position(0.0f, 0.0f, -100.0f);
 
-		m_model = std::make_shared<model>(m_d3d->get_device());
+		m_textureShader = std::make_shared<texture_shader>(m_d3d->get_device(), hwnd);
 
-		m_colorShader = std::make_shared<color_shader>(m_d3d->get_device(), hwnd);
+		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), L"Images\\brick.jpeg");
 	}
 	catch (std::exception e) 
 	{
@@ -64,7 +64,7 @@ bool d3d11renderer::application::render()
 	m_model->render(m_d3d->get_device_context());
 
 	// Render the model using the color shader.
-	result = m_colorShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix);
+	result = m_textureShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix, m_model->get_texture());
 	if (!result)
 	{
 		return false;

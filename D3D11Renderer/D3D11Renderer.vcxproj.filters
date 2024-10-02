@@ -57,6 +57,12 @@
     <ClCompile Include="Core\camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\texture_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\texture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -104,9 +110,20 @@
     <ClInclude Include="Core\camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Core\texture_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\colorvs.hlsl" />
     <None Include="Shaders\colorps.hlsl" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\textureps.hlsl" />
+    <FxCompile Include="Shaders\texturevs.hlsl" />
   </ItemGroup>
 </Project>

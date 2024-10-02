@@ -199,6 +199,28 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 
 	m_deviceContext->RSSetState(m_rasterState.Get());
 
+	D3D11_BLEND_DESC blendDesc;
+	ZeroMemory(&blendDesc, sizeof(blendDesc));
+
+	blendDesc.AlphaToCoverageEnable = FALSE; // Do not enable alpha to coverage
+	blendDesc.IndependentBlendEnable = FALSE; // Use one blend state for all render targets
+
+	// Set the blend state for render target 0
+	D3D11_RENDER_TARGET_BLEND_DESC& rtBlendDesc = blendDesc.RenderTarget[0];
+	rtBlendDesc.BlendEnable = TRUE; // Enable blending
+	rtBlendDesc.SrcBlend = D3D11_BLEND_SRC_ALPHA; // Source blend factor
+	rtBlendDesc.DestBlend = D3D11_BLEND_INV_SRC_ALPHA; // Destination blend factor
+	rtBlendDesc.BlendOp = D3D11_BLEND_OP_ADD; // Blend operation
+	rtBlendDesc.SrcBlendAlpha = D3D11_BLEND_ONE; // Alpha source blend
+	rtBlendDesc.DestBlendAlpha = D3D11_BLEND_ZERO; // Alpha destination blend
+	rtBlendDesc.BlendOpAlpha = D3D11_BLEND_OP_ADD; // Alpha blend operation
+	rtBlendDesc.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL; // Write to all color channels
+
+	// Create the blend state
+	result = m_device->CreateBlendState(&blendDesc, m_blendState.GetAddressOf());
+	if (FAILED(result))
+	throw std::runtime_error("Failed to create blend state");
+
 	m_viewport.Width = (float)screenWidth;
 	m_viewport.Height = (float)screenHeight;
 	m_viewport.MinDepth = 0.0f;
@@ -245,6 +267,9 @@ void d3d11renderer::d3dclass::begin_scene(float red, float green, float blue, fl
 
 	// Clear the depth buffer.
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	m_deviceContext->OMSetBlendState(m_blendState.Get(), nullptr, 0xffffffff); // Set blend state with no specific blend factor
+
 
 	return;
 }
