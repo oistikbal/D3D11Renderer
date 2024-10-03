@@ -13,7 +13,10 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light->set_diffuse_color(1.0f, 1.0f, 1.0f, 1.0f);
 		m_light->set_direction(0.0f, 0.0f, 1.0f);
 
-		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), L"Images\\brick.jpeg");
+		wchar_t modelFilename[128];
+		wcscpy_s(modelFilename, L"Models\\cube.txt");;
+
+		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), modelFilename, L"Images\\brick.jpeg");
 	}
 	catch (std::exception e) 
 	{

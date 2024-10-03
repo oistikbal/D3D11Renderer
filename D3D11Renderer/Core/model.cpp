@@ -1,14 +1,21 @@
 #include "model.h"
 #include <stdexcept>
 
-model::model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename)
+model::model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* modelfilename, const wchar_t* texturefilename)
 {
-	auto result = initialize_buffers(device);
+	auto result = load_model(modelfilename);
+	if (!result)
+	{
+		throw std::runtime_error("Failed to initialize model");
+	}
+
+
+	result = initialize_buffers(device);
 	if (!result) {
 		throw std::runtime_error("Failed to initialize buffers");
 	}
 
-	result = load_texture(device, deviceContext, filename);
+	result = load_texture(device, deviceContext, texturefilename);
 	if (!result) {
 		throw std::runtime_error("Failed to initialize buffers");
 	}
@@ -40,45 +47,22 @@ bool model::initialize_buffers(ID3D11Device* device)
 	D3D11_BUFFER_DESC vertexBufferDesc, indexBufferDesc;
 	D3D11_SUBRESOURCE_DATA vertexData, indexData;
 	HRESULT result;
+	int i;
 
-	// Set the number of vertices in the vertex array.
-	m_vertexCount = 3;
-
-	// Set the number of indices in the index array.
-	m_indexCount = 3;
-
-	// Create the vertex array.
 	vertices = new VertexType[m_vertexCount];
-	if (!vertices)
-	{
-		return false;
-	}
 
 	// Create the index array.
 	indices = new unsigned long[m_indexCount];
-	if (!indices)
+
+	// Create the vertex array.
+	for (i = 0; i < m_vertexCount; i++)
 	{
-		return false;
+		vertices[i].position = DirectX::XMFLOAT3(m_model[i].x, m_model[i].y, m_model[i].z);
+		vertices[i].texture = DirectX::XMFLOAT2(m_model[i].tu, m_model[i].tv);
+		vertices[i].normal = DirectX::XMFLOAT3(m_model[i].nx, m_model[i].ny, m_model[i].nz);
+
+		indices[i] = i;
 	}
-
-	vertices[0].position = DirectX::XMFLOAT3(-1.0f, -1.0f, 0.0f);  // Bottom left.
-	vertices[0].texture = DirectX::XMFLOAT2(0.0f, 1.0f);
-	vertices[0].normal = DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f);
-
-	vertices[1].position = DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);  // Top middle.
-	vertices[1].texture = DirectX::XMFLOAT2(0.5f, 0.0f);
-	vertices[1].normal = DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f);
-
-
-	vertices[2].position = DirectX::XMFLOAT3(1.0f, -1.0f, 0.0f);  // Bottom right.
-	vertices[2].texture = DirectX::XMFLOAT2(1.0f, 1.0f);
-	vertices[2].normal = DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f);
-
-
-	// Load the index array with data.
-	indices[0] = 0;  // Bottom left.
-	indices[1] = 1;  // Top middle.
-	indices[2] = 2;  // Bottom right.
 
 	vertexBufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	vertexBufferDesc.ByteWidth = sizeof(VertexType) * m_vertexCount;
@@ -119,6 +103,7 @@ bool model::initialize_buffers(ID3D11Device* device)
 		return false;
 	}
 
+	// Release the arrays now that the vertex and index buffers have been created and loaded.
 	delete[] vertices;
 	vertices = 0;
 
@@ -162,6 +147,58 @@ bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	{
 		return false;
 	}
+
+	return true;
+}
+
+bool model::load_model(const wchar_t* modelfilename)
+{
+	std::ifstream fin;
+	char input;
+	int i;
+
+	// Open the model file.
+	fin.open(modelfilename);
+
+	if (fin.fail())
+	{
+		return false;
+	}
+
+	// Read up to the value of vertex count.
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+
+	// Read in the vertex count.
+	fin >> m_vertexCount;
+
+	// Set the number of indices to be the same as the vertex count.
+	m_indexCount = m_vertexCount;
+
+	// Resize the vector to hold the model data.
+	m_model.resize(m_vertexCount);
+
+	// Read up to the beginning of the data.
+	fin.get(input);
+	while (input != ':')
+	{
+		fin.get(input);
+	}
+	fin.get(input);
+	fin.get(input);
+
+	// Read in the vertex data.
+	for (i = 0; i < m_vertexCount; i++)
+	{
+		fin >> m_model[i].x >> m_model[i].y >> m_model[i].z;
+		fin >> m_model[i].tu >> m_model[i].tv;
+		fin >> m_model[i].nx >> m_model[i].ny >> m_model[i].nz;
+	}
+
+	fin.close();
 
 	return true;
 }
