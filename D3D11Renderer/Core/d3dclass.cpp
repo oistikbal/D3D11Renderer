@@ -339,6 +339,77 @@ void d3d11renderer::d3dclass::reset_viewport()
 	return;
 }
 
+void d3d11renderer::d3dclass::resize(int width, int height)
+{
+	if (width <= 0 || height <= 0) 
+		return;
+
+
+	if (!m_deviceContext) return;
+
+	// Ensure any views or buffers are released before resizing
+	m_renderTargetView.Reset();
+	m_depthStencilView.Reset();
+	m_depthStencilBuffer.Reset();
+
+	// Resize the swap chain
+	HRESULT hr = m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr))
+		throw std::runtime_error("Failed to resize swapChain");
+
+	// Recreate the render target view with the resized back buffer
+	ComPtr<ID3D11Texture2D> backBuffer;
+	hr = m_swapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(backBuffer.GetAddressOf()));
+	if (FAILED(hr))
+		throw std::runtime_error("Failed to get back buffer");
+
+	hr = m_device->CreateRenderTargetView(backBuffer.Get(), nullptr, m_renderTargetView.GetAddressOf());
+	if (FAILED(hr))
+		throw std::runtime_error("Failed to create render target view");
+
+	// Resize the depth/stencil buffer and create a new depth stencil view
+	D3D11_TEXTURE2D_DESC depthDesc = {};
+	depthDesc.Width = width;
+	depthDesc.Height = height;
+	depthDesc.MipLevels = 1;
+	depthDesc.ArraySize = 1;
+	depthDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	depthDesc.SampleDesc.Count = 1;
+	depthDesc.Usage = D3D11_USAGE_DEFAULT;
+	depthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+	hr = m_device->CreateTexture2D(&depthDesc, nullptr, m_depthStencilBuffer.GetAddressOf());
+	if (FAILED(hr)) {
+		// Handle error
+		return;
+	}
+
+	hr = m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), nullptr, m_depthStencilView.GetAddressOf());
+	if (FAILED(hr)) {
+		// Handle error
+		return;
+	}
+
+
+	// Bind the render target view and depth stencil view to the output-merger stage
+	m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+
+	auto fieldOfView = DirectX::XM_PIDIV4; // 45 degrees
+	auto screenAspect = static_cast<float>(width) / static_cast<float>(height);
+	m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, 1, 1000);
+
+	// Set the new viewport
+	D3D11_VIEWPORT viewport = {};
+	viewport.Width = static_cast<FLOAT>(width);
+	viewport.Height = static_cast<FLOAT>(height);
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	viewport.TopLeftX = 0;
+	viewport.TopLeftY = 0;
+
+	m_deviceContext->RSSetViewports(1, &viewport);
+}
+
 bool d3d11renderer::d3dclass::is_initialized() const
 {
 	return m_isInitialized;

@@ -25,6 +25,7 @@ namespace d3d11renderer
 
 		void shutdown();
 		bool frame();
+		void resize(int width, int height);
 
 	private:
 		bool render(float);

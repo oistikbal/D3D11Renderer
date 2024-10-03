@@ -26,6 +26,7 @@ namespace d3d11renderer
 
 		void set_back_buffer_render_target();
 		void reset_viewport();
+		void resize(int width, int height);
 		bool is_initialized() const;
 
 	private:

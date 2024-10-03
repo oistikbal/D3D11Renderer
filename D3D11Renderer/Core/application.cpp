@@ -57,6 +57,14 @@ bool d3d11renderer::application::frame()
 	return true;
 }
 
+void d3d11renderer::application::resize(int width, int height)
+{
+	if (m_d3d == nullptr)
+		return;
+
+	m_d3d->resize(width, height);
+}
+
 bool d3d11renderer::application::render(float rotation)
 {
 	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
