@@ -262,6 +262,9 @@ void d3d11renderer::d3dclass::begin_scene(float red, float green, float blue, fl
 	color[2] = blue;
 	color[3] = alpha;
 
+
+	set_back_buffer_render_target();
+
 	// Clear the back buffer.
 	m_deviceContext->ClearRenderTargetView(m_renderTargetView.Get(), color);
 

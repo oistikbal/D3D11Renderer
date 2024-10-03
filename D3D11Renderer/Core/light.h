@@ -8,13 +8,17 @@ public:
 	light();
 	~light();
 
+
 	void set_diffuse_color(float, float, float, float);
+	void set_ambient_color(float, float, float, float);
 	void set_direction(float, float, float);
 
 	DirectX::XMFLOAT4 get_diffuse_color();
+	DirectX::XMFLOAT4 get_ambient_color();
 	DirectX::XMFLOAT3 get_direction();
 
 private:
 	DirectX::XMFLOAT4 m_diffuseColor;
+	DirectX::XMFLOAT4 m_ambientColor;
 	DirectX::XMFLOAT3 m_direction;
 };
