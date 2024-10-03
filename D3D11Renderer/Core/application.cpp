@@ -6,9 +6,12 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 	{
 		m_d3d = std::make_shared<d3d11renderer::d3dclass>(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 		m_camera = std::make_shared<camera>();
-		m_camera->set_position(0.0f, 0.0f, -100.0f);
+		m_camera->set_position(0.0f, 0.0f, -5.0f);
 
-		m_textureShader = std::make_shared<texture_shader>(m_d3d->get_device(), hwnd);
+		m_lightShader = std::make_shared<light_shader>(m_d3d->get_device(), hwnd);
+		m_light = std::make_shared<light>();
+		m_light->set_diffuse_color(1.0f, 1.0f, 1.0f, 1.0f);
+		m_light->set_direction(0.0f, 0.0f, 1.0f);
 
 		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), L"Images\\brick.jpeg");
 	}
@@ -29,11 +32,19 @@ void d3d11renderer::application::shutdown()
 
 bool d3d11renderer::application::frame()
 {
+	static float rotation = 0.0f;
 	bool result;
 
 
+	// Update the rotation variable each frame.
+	rotation -= 0.0174532925f * 0.1f;
+	if (rotation < 0.0f)
+	{
+		rotation += 360.0f;
+	}
+
 	// Render the graphics scene.
-	result = render();
+	result = render(rotation);
 	if (!result)
 	{
 		return false;
@@ -42,7 +53,7 @@ bool d3d11renderer::application::frame()
 	return true;
 }
 
-bool d3d11renderer::application::render()
+bool d3d11renderer::application::render(float rotation)
 {
 	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	bool result;
@@ -59,12 +70,16 @@ bool d3d11renderer::application::render()
 	m_camera->get_view_matrix(viewMatrix);
 	m_d3d->get_projection_matrix(projectionMatrix);
 
+	worldMatrix = DirectX::XMMatrixRotationY(rotation);
+
+
 	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
 
 	m_model->render(m_d3d->get_device_context());
 
 	// Render the model using the color shader.
-	result = m_textureShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix, m_model->get_texture());
+	result = m_lightShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix, m_model->get_texture(), m_light->get_direction(),
+		m_light->get_diffuse_color());
 	if (!result)
 	{
 		return false;

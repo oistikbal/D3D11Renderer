@@ -96,6 +96,8 @@
     <ClCompile Include="Core\camera.cpp" />
     <ClCompile Include="Core\color_shader.cpp" />
     <ClCompile Include="Core\d3dclass.cpp" />
+    <ClCompile Include="Core\light.cpp" />
+    <ClCompile Include="Core\light_shader.cpp" />
     <ClCompile Include="Core\model.cpp" />
     <ClCompile Include="Core\texture.cpp" />
     <ClCompile Include="Core\texture_shader.cpp" />
@@ -114,6 +116,8 @@
     <ClInclude Include="Core\camera.h" />
     <ClInclude Include="Core\color_shader.h" />
     <ClInclude Include="Core\d3dclass.h" />
+    <ClInclude Include="Core\light.h" />
+    <ClInclude Include="Core\light_shader.h" />
     <ClInclude Include="Core\model.h" />
     <ClInclude Include="Core\texture.h" />
     <ClInclude Include="Core\texture_shader.h" />
@@ -140,6 +144,14 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\lightps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\lightvs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shaders\textureps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>

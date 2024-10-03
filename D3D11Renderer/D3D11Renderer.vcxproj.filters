@@ -63,6 +63,12 @@
     <ClCompile Include="Core\texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\light_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\light.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -116,6 +122,12 @@
     <ClInclude Include="Core\texture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Core\light_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\light.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\colorvs.hlsl" />
@@ -125,5 +137,7 @@
   <ItemGroup>
     <FxCompile Include="Shaders\textureps.hlsl" />
     <FxCompile Include="Shaders\texturevs.hlsl" />
+    <FxCompile Include="Shaders\lightps.hlsl" />
+    <FxCompile Include="Shaders\lightvs.hlsl" />
   </ItemGroup>
 </Project>

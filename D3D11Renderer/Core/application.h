@@ -2,10 +2,13 @@
 
 #include <Windows.h>
 #include <memory>
+
 #include "d3dclass.h"
 #include "camera.h"
 #include "model.h"
 #include "texture_shader.h"
+#include "light_shader.h"
+#include "light.h"
 
 constexpr bool FULL_SCREEN = false;
 constexpr bool VSYNC_ENABLED = true;
@@ -24,11 +27,12 @@ namespace d3d11renderer
 		bool frame();
 
 	private:
-		bool render();
+		bool render(float);
 	private:
 		std::shared_ptr<d3d11renderer::d3dclass> m_d3d;
 		std::shared_ptr<camera> m_camera;
 		std::shared_ptr<model> m_model;
-		std::shared_ptr<texture_shader> m_textureShader;
+		std::shared_ptr<light> m_light;
+		std::shared_ptr<light_shader> m_lightShader;
 	};
 }

@@ -13,6 +13,7 @@ private:
 	{
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT2 texture;
+		DirectX::XMFLOAT3 normal;
 	};
 public:
 	model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename);
