@@ -108,7 +108,7 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	swapChainDesc.Flags = 0;
 
-	featureLevel = D3D_FEATURE_LEVEL_11_0;
+	featureLevel = D3D_FEATURE_LEVEL_11_1;
 
 	// Create Device and Swap Chain
 	result = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, D3D11_CREATE_DEVICE_DEBUG, &featureLevel, 1,

@@ -12,12 +12,15 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light = std::make_shared<light>();
 		m_light->set_ambient_color(0.15f, 0.15f, 0.15f, 1.0f);
 		m_light->set_diffuse_color(1.0f, 1.0f, 1.0f, 1.0f);
-		m_light->set_direction(1.0f, -1.0f, 1.0f);
+		m_light->set_direction(1.0f, 0.0f, 1.0f);
+		m_light->set_specular_color(0.0f, 0.0f, 0.0f, 0.0f);
+		m_light->set_specular_power(32.0f);
+
 
 		wchar_t modelFilename[128];
-		wcscpy_s(modelFilename, L"Models\\cube.txt");;
+		wcscpy_s(modelFilename, L"Models\\sphere.txt");;
 
-		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), modelFilename, L"Images\\brick.jpeg");
+		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), modelFilename, L"Images\\brick.png");
 	}
 	catch (std::exception e) 
 	{
@@ -91,7 +94,7 @@ bool d3d11renderer::application::render(float rotation)
 
 	// Render the model using the color shader.
 	result = m_lightShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix, m_model->get_texture(), m_light->get_direction(),
-		m_light->get_diffuse_color(), m_light->get_ambient_color());
+		m_light->get_diffuse_color(), m_light->get_ambient_color(), m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
 	if (!result)
 	{
 		return false;

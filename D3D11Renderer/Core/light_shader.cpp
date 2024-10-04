@@ -32,14 +32,15 @@ light_shader::~light_shader()
 {
 }
 
-bool light_shader::render(ID3D11DeviceContext* deviceContext, int indexCount, DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, 
-    DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT4 ambientColor)
+bool light_shader::render(ID3D11DeviceContext* deviceContext, int indexCount, DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX viewMatrix,
+    DirectX::XMMATRIX projectionMatrix, ID3D11ShaderResourceView* texture, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 diffuseColor,
+    DirectX::XMFLOAT4 ambientColor, DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower)
 {
     bool result;
 
 
     // Set the shader parameters that it will use for rendering.
-    result = set_shader_parameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection, diffuseColor, ambientColor);
+    result = set_shader_parameters(deviceContext, worldMatrix, viewMatrix, projectionMatrix, texture, lightDirection, diffuseColor, ambientColor, cameraPosition, specularColor, specularPower);
     if (!result)
     {
         return false;
@@ -83,13 +84,14 @@ void light_shader::output_shader_error_message(ID3D10Blob* errorMessage, HWND hw
 }
 
 bool light_shader::set_shader_parameters(ID3D11DeviceContext* deviceContext, DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix,
-    ID3D11ShaderResourceView* texture, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT4 ambientColor)
+    ID3D11ShaderResourceView* texture, DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 diffuseColor, DirectX::XMFLOAT4 ambientColor, DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower)
 {
     HRESULT result;
     D3D11_MAPPED_SUBRESOURCE mappedResource;
     unsigned int bufferNumber;
     MatrixBufferType* dataPtr;
     LightBufferType* dataPtr2;
+    CameraBufferType* dataPtr3;
 
 
     // Transpose the matrices to prepare them for the shader.
@@ -121,6 +123,28 @@ bool light_shader::set_shader_parameters(ID3D11DeviceContext* deviceContext, Dir
     // Now set the constant buffer in the vertex shader with the updated values.
     deviceContext->VSSetConstantBuffers(bufferNumber, 1, m_matrixBuffer.GetAddressOf());
 
+    result = deviceContext->Map(m_cameraBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    // Get a pointer to the data in the constant buffer.
+    dataPtr3 = (CameraBufferType*)mappedResource.pData;
+
+    // Copy the camera position into the constant buffer.
+    dataPtr3->cameraPosition = cameraPosition;
+    dataPtr3->padding = 0.0f;
+
+    // Unlock the camera constant buffer.
+    deviceContext->Unmap(m_cameraBuffer.Get(), 0);
+
+    // Set the position of the camera constant buffer in the vertex shader.
+    bufferNumber = 1;
+
+    // Now set the camera constant buffer in the vertex shader with the updated values.
+    deviceContext->VSSetConstantBuffers(bufferNumber, 1, m_cameraBuffer.GetAddressOf());
+
     // Set shader texture resource in the pixel shader.
     deviceContext->PSSetShaderResources(0, 1, &texture);
 
@@ -137,7 +161,9 @@ bool light_shader::set_shader_parameters(ID3D11DeviceContext* deviceContext, Dir
     dataPtr2->ambientColor = ambientColor;
     dataPtr2->diffuseColor = diffuseColor;
     dataPtr2->lightDirection = lightDirection;
-    dataPtr2->padding = 0.0f;
+    dataPtr2->specularColor = specularColor;
+    dataPtr2->specularPower = specularPower;
+
 
     // Unlock the constant buffer.
     deviceContext->Unmap(m_lightBuffer.Get(), 0);
@@ -179,7 +205,7 @@ bool light_shader::initialize_shader(ID3D11Device* device, HWND hwnd, WCHAR* vsF
     unsigned int numElements;
     D3D11_SAMPLER_DESC samplerDesc;
     D3D11_BUFFER_DESC matrixBufferDesc;
-
+    D3D11_BUFFER_DESC cameraBufferDesc;
     D3D11_BUFFER_DESC lightBufferDesc;
 
 
@@ -302,6 +328,20 @@ bool light_shader::initialize_shader(ID3D11Device* device, HWND hwnd, WCHAR* vsF
 
     // Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
     result = device->CreateBuffer(&matrixBufferDesc, NULL, m_matrixBuffer.GetAddressOf());
+    if (FAILED(result))
+    {
+        return false;
+    }
+
+    cameraBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    cameraBufferDesc.ByteWidth = sizeof(CameraBufferType);
+    cameraBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    cameraBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    cameraBufferDesc.MiscFlags = 0;
+    cameraBufferDesc.StructureByteStride = 0;
+
+    // Create the camera constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+    result = device->CreateBuffer(&cameraBufferDesc, NULL, m_cameraBuffer.GetAddressOf());
     if (FAILED(result))
     {
         return false;
