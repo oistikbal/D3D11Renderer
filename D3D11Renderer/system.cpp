@@ -201,16 +201,15 @@ LRESULT CALLBACK d3d11renderer::system::message_handler(HWND hwnd, UINT umsg, WP
 	switch (umsg)
 	{
 		case WM_KEYDOWN:
-		{
-			m_input->key_down((unsigned int)wparam);
-			return 0;
-		}
-
 		case WM_KEYUP:
-		{
-			m_input->key_up((unsigned int)wparam);
-			return 0;
-		}
+		case WM_LBUTTONDOWN:
+		case WM_LBUTTONUP:
+		case WM_RBUTTONDOWN:
+		case WM_RBUTTONUP:
+		case WM_MOUSEMOVE:
+		case WM_MOUSEWHEEL:
+			m_input->update(hwnd, umsg, wparam, lparam);
+			break;
 
 		case WM_SIZE: 
 		{
