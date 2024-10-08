@@ -20,7 +20,7 @@ namespace d3d11renderer
 	class application
 	{
 	public:
-		application(int, int, HWND);
+		application(int, int, HWND, std::shared_ptr<d3d11renderer::input>);
 		~application();
 
 		void shutdown();

@@ -15,7 +15,7 @@ d3d11renderer::system::system()
 	try
 	{
 		m_input = std::make_shared<d3d11renderer::input>();
-		m_application = std::make_shared<d3d11renderer::application>(screenWidth, screenHeight, m_hwnd);
+		m_application = std::make_shared<d3d11renderer::application>(screenWidth, screenHeight, m_hwnd, m_input);
 	}
 	catch (const std::exception& e)
 	{

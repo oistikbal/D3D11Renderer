@@ -1,12 +1,13 @@
 #include "application.h"
 
-d3d11renderer::application::application(int screenWidth, int screenHeight, HWND hwnd)
+d3d11renderer::application::application(int screenWidth, int screenHeight, HWND hwnd, std::shared_ptr<d3d11renderer::input> input)
 {
 	try 
 	{
 		m_d3d = std::make_shared<d3d11renderer::d3dclass>(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
-		m_camera = std::make_shared<camera>();
+		m_camera = std::make_shared<camera>(input);
 		m_camera->set_position(0.0f, 0.0f, -10.0f);
+		m_camera->set_rotation(0.0f, DirectX::XMConvertToDegrees(179.0f), 0.0f);
 
 		m_lightShader = std::make_shared<light_shader>(m_d3d->get_device(), hwnd);
 		m_light = std::make_shared<light>();
@@ -77,7 +78,7 @@ bool d3d11renderer::application::render(float rotation)
 	// Clear the buffers to begin the scene.
 	m_d3d->begin_scene(0.3f,0.3f,0.3f,0.1f);
 
-	// Generate the view matrix based on the camera's position.
+	m_camera->frame(1.0f / 144.0f);
 	m_camera->render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.

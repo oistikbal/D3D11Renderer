@@ -1,99 +1,163 @@
 #include "camera.h"
 
-camera::camera()
+d3d11renderer::camera::camera(std::shared_ptr<d3d11renderer::input> input)
+    : m_input(input), m_position(0.0f, 0.0f, 0.0f), m_rotation(0.0f, 0.0f, 0.0f)
 {
-	m_positionX = 0.0f;
-	m_positionY = 0.0f;
-	m_positionZ = 0.0f;
-
-	m_rotationX = 0.0f;
-	m_rotationY = 0.0f;
-	m_rotationZ = 0.0f;
+    m_mouseSensitivity = 0.01f;
+    m_lastMouseX = 0;
+    m_lastMouseY = 0;
 }
 
-camera::~camera()
+d3d11renderer::camera::~camera()
 {
 }
 
-void camera::set_position(float x, float y, float z)
+void d3d11renderer::camera::frame(float deltaTime)
 {
-	m_positionX = x;
-	m_positionY = y;
-	m_positionZ = z;
-	return;
+    if (m_input->is_key_down('W')) { move_forward(deltaTime); }
+    if (m_input->is_key_down('S')) { move_backward(deltaTime); }
+    if (m_input->is_key_down('A')) { strafe_left(deltaTime); }
+    if (m_input->is_key_down('D')) { strafe_right(deltaTime); }
+
+    auto mousePos = m_input->get_mouse_position();
+    float deltaX = (float)(mousePos.first - m_lastMouseX) * m_mouseSensitivity;
+    float deltaY = (float)(mousePos.second - m_lastMouseY) * m_mouseSensitivity;
+
+    if (m_input->is_mouse_button_down(1))
+    {
+        smooth_rotate(deltaX, deltaY, 0.9f);
+    }
+
+    // Update last mouse positions
+    m_lastMouseX = mousePos.first;
+    m_lastMouseY = mousePos.second;
+
+    if (m_rotation.x > maxPitch) { m_rotation.x = maxPitch; }
+    if (m_rotation.x < minPitch) { m_rotation.x = minPitch; }
 }
 
-void camera::set_rotation(float x, float y, float z)
+void d3d11renderer::camera::set_position(float x, float y, float z)
 {
-	m_rotationX = x;
-	m_rotationY = y;
-	m_rotationZ = z;
-	return;
+    m_position = DirectX::XMFLOAT3(x, y, z);
 }
 
-DirectX::XMFLOAT3 camera::get_position()
+void d3d11renderer::camera::set_rotation(float x, float y, float z)
 {
-	return DirectX::XMFLOAT3(m_positionX, m_positionY, m_positionZ);
+    m_rotation = DirectX::XMFLOAT3(x, y, z);
 }
 
-DirectX::XMFLOAT3 camera::get_rotation()
+DirectX::XMFLOAT3 d3d11renderer::camera::get_position()
 {
-	return DirectX::XMFLOAT3(m_rotationX, m_rotationY, m_rotationZ);
+    return m_position;
 }
 
-void camera::render()
+DirectX::XMFLOAT3 d3d11renderer::camera::get_rotation()
 {
-	DirectX::XMFLOAT3 up, position, lookAt;
-	DirectX::XMVECTOR upVector, positionVector, lookAtVector;
-	float yaw, pitch, roll;
-	DirectX::XMMATRIX rotationMatrix;
-
-
-	// Setup the vector that points upwards.
-	up.x = 0.0f;
-	up.y = 1.0f;
-	up.z = 0.0f;
-
-	// Load it into a XMVECTOR structure.
-	upVector = DirectX::XMLoadFloat3(&up);
-
-	// Setup the position of the camera in the world.
-	position.x = m_positionX;
-	position.y = m_positionY;
-	position.z = m_positionZ;
-
-	// Load it into a XMVECTOR structure.
-	positionVector = DirectX::XMLoadFloat3(&position);
-
-	// Setup where the camera is looking by default.
-	lookAt.x = 0.0f;
-	lookAt.y = 0.0f;
-	lookAt.z = 1.0f;
-
-	// Load it into a XMVECTOR structure.
-	lookAtVector = DirectX::XMLoadFloat3(&lookAt);
-
-	// Set the yaw (Y axis), pitch (X axis), and roll (Z axis) rotations in radians.
-	pitch = m_rotationX * 0.0174532925f;
-	yaw = m_rotationY * 0.0174532925f;
-	roll = m_rotationZ * 0.0174532925f;
-
-	// Create the rotation matrix from the yaw, pitch, and roll values.
-	rotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(pitch, yaw, roll);
-
-	// Transform the lookAt and up vector by the rotation matrix so the view is correctly rotated at the origin.
-	lookAtVector = XMVector3TransformCoord(lookAtVector, rotationMatrix);
-	upVector = XMVector3TransformCoord(upVector, rotationMatrix);
-
-	// Translate the rotated camera position to the location of the viewer.
-	lookAtVector = DirectX::XMVectorAdd(positionVector, lookAtVector);
-
-	// Finally create the view matrix from the three updated vectors.
-	m_viewMatrix = DirectX::XMMatrixLookAtLH(positionVector, lookAtVector, upVector);
+    return m_rotation;
 }
 
-void camera::get_view_matrix(DirectX::XMMATRIX& viewMatrix)
+DirectX::XMFLOAT3 d3d11renderer::camera::get_forward()
 {
-	viewMatrix = m_viewMatrix;
+    DirectX::XMFLOAT3 forward;
+    forward.x = cos(m_rotation.y) * cos(m_rotation.x);
+    forward.y = sin(m_rotation.x);
+    forward.z = sin(m_rotation.y) * cos(m_rotation.x);
+
+    // Normalize the forward vector
+    float length = sqrt(forward.x * forward.x + forward.y * forward.y + forward.z * forward.z);
+    if (length > 0.0f) {
+        forward.x /= length;
+        forward.y /= length;
+        forward.z /= length;
+    }
+    return forward;
 }
 
+DirectX::XMFLOAT3 d3d11renderer::camera::get_right()
+{
+    DirectX::XMFLOAT3 forward = get_forward();
+    DirectX::XMFLOAT3 up = get_up();
+    DirectX::XMFLOAT3 right;
+
+    right.x = forward.y * up.z - forward.z * up.y;
+    right.y = forward.z * up.x - forward.x * up.z;
+    right.z = forward.x * up.y - forward.y * up.x;
+
+    // Normalize the right vector
+    float length = sqrt(right.x * right.x + right.y * right.y + right.z * right.z);
+    if (length > 0.0f) {
+        right.x /= length;
+        right.y /= length;
+        right.z /= length;
+    }
+
+    return right;
+}
+
+DirectX::XMFLOAT3 d3d11renderer::camera::get_up()
+{
+    return DirectX::XMFLOAT3(0.0f, 1.0f, 0.0f);
+}
+
+void d3d11renderer::camera::render()
+{
+    DirectX::XMFLOAT3 up = get_up();
+    DirectX::XMFLOAT3 position = get_position();
+    DirectX::XMFLOAT3 lookAt;
+
+    // Calculate the lookAt vector based on yaw (m_rotation.y) and pitch (m_rotation.x)
+    lookAt.x = position.x + get_forward().x;
+    lookAt.y = position.y + get_forward().y;
+    lookAt.z = position.z + get_forward().z;
+
+    m_viewMatrix = DirectX::XMMatrixLookAtLH(DirectX::XMLoadFloat3(&position),
+        DirectX::XMLoadFloat3(&lookAt),
+        DirectX::XMLoadFloat3(&up));
+}
+
+void d3d11renderer::camera::get_view_matrix(DirectX::XMMATRIX& viewMatrix)
+{
+    viewMatrix = m_viewMatrix;
+}
+
+void d3d11renderer::camera::move_forward(float deltaTime)
+{
+    DirectX::XMFLOAT3 forward = get_forward();
+    m_position.x += forward.x * m_moveSpeed * deltaTime;
+    m_position.y += forward.y * m_moveSpeed * deltaTime;
+    m_position.z += forward.z * m_moveSpeed * deltaTime;
+}
+
+void d3d11renderer::camera::move_backward(float deltaTime)
+{
+    DirectX::XMFLOAT3 forward = get_forward();
+    m_position.x -= forward.x * m_moveSpeed * deltaTime;
+    m_position.y -= forward.y * m_moveSpeed * deltaTime;
+    m_position.z -= forward.z * m_moveSpeed * deltaTime;
+}
+
+void d3d11renderer::camera::strafe_left(float deltaTime)
+{
+    DirectX::XMFLOAT3 right = get_right();
+    m_position.x -= right.x * m_moveSpeed * deltaTime;
+    m_position.y -= right.y * m_moveSpeed * deltaTime;
+    m_position.z -= right.z * m_moveSpeed * deltaTime;
+}
+
+void d3d11renderer::camera::strafe_right(float deltaTime)
+{
+    DirectX::XMFLOAT3 right = get_right();
+    m_position.x += right.x * m_moveSpeed * deltaTime;
+    m_position.y += right.y * m_moveSpeed * deltaTime;
+    m_position.z += right.z * m_moveSpeed * deltaTime;
+}
+
+void d3d11renderer::camera::smooth_rotate(float deltaX, float deltaY, float smoothFactor)
+{
+    m_rotation.y = (1.0f - smoothFactor) * m_rotation.y + smoothFactor * (m_rotation.y + deltaX);
+    m_rotation.x = (1.0f - smoothFactor) * m_rotation.x + smoothFactor * (m_rotation.x + deltaY);
+
+    // Clamp pitch to avoid camera flipping
+    if (m_rotation.x > DirectX::XM_PI / 2.0f) { m_rotation.x = DirectX::XM_PI / 2.0f; }
+    if (m_rotation.x < -DirectX::XM_PI / 2.0f) { m_rotation.x = -DirectX::XM_PI / 2.0f; }
+}

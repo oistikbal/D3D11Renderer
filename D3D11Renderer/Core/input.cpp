@@ -2,12 +2,10 @@
 #include <windowsx.h>
 #pragma once
 
-d3d11renderer::input::input()
+d3d11renderer::input::input() : m_mouse_position{ 0, 0 }, m_mouse_wheel_delta(0)
 {
-	for (bool& key : m_keys)
-	{
-		key = false;
-	}
+    m_keys.fill(false);
+    m_mouse_buttons.fill(false);
 }
 
 d3d11renderer::input::~input()

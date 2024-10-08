@@ -17,6 +17,7 @@ namespace d3d11renderer
         std::pair<int, int> get_mouse_position() const;
         int get_mouse_wheel_delta() const;
 
+
     private:
         // Helper methods for internal handling
         void key_down(unsigned int key);
