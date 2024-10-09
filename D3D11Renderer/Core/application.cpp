@@ -1,4 +1,7 @@
 #include "application.h"
+#include "../imgui/imgui.h"
+#include "../imgui/imgui_impl_win32.h"
+#include "../imgui/imgui_impl_dx11.h"
 
 d3d11renderer::application::application(int screenWidth, int screenHeight, HWND hwnd, std::shared_ptr<d3d11renderer::input> input)
 {
@@ -6,8 +9,8 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 	{
 		m_d3d = std::make_shared<d3d11renderer::d3dclass>(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 		m_camera = std::make_shared<camera>(input);
-		m_camera->set_position(0.0f, 0.0f, -10.0f);
-		m_camera->set_rotation(0.0f, DirectX::XMConvertToDegrees(179.0f), 0.0f);
+		m_camera->set_position(0.0f, 0.0f, 10.0f);
+		m_camera->set_rotation(0.0f, DirectX::XMConvertToRadians(90.0f), 0.0f);
 
 		m_lightShader = std::make_shared<light_shader>(m_d3d->get_device(), hwnd);
 		m_light = std::make_shared<light>();
@@ -22,6 +25,8 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		wcscpy_s(modelFilename, L"Models\\sphere.txt");;
 
 		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), modelFilename, L"Images\\brick.png");
+
+		ImGui_ImplDX11_Init(m_d3d->get_device(), m_d3d->get_device_context());
 	}
 	catch (std::exception e) 
 	{
@@ -100,6 +105,38 @@ bool d3d11renderer::application::render(float rotation)
 	{
 		return false;
 	}
+
+
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+	{
+		auto pos = m_camera->get_position(); // Assuming you have this function
+		auto rot = m_camera->get_rotation(); // Assuming you have this function
+		ImGui::Begin("Camera");
+
+		ImGui::Text("Position:");
+		ImGui::SameLine();
+		ImGui::Text("X: %.2f", pos.x);
+		ImGui::SameLine();
+		ImGui::Text("Y: %.2f", pos.y);
+		ImGui::SameLine();
+		ImGui::Text("Z: %.2f", pos.z);
+
+
+		// Display camera rotation horizontally
+		ImGui::Text("Rotation");
+		ImGui::SameLine();
+		ImGui::Text("X: %.2f", DirectX::XMConvertToDegrees(rot.x));
+		ImGui::SameLine();
+		ImGui::Text("Y: %.2f", DirectX::XMConvertToDegrees(rot.y));
+		ImGui::SameLine();
+		ImGui::Text("Z: %.2f", DirectX::XMConvertToDegrees(rot.z));
+
+		ImGui::End();
+	}
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 	m_d3d->end_scene();
 

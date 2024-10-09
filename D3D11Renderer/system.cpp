@@ -1,4 +1,7 @@
 #include "system.h"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_win32.h"
+#include "imgui/imgui_impl_dx11.h"
 
 static d3d11renderer::system* g_system;
 
@@ -26,6 +29,7 @@ d3d11renderer::system::system()
 
 d3d11renderer::system::~system()
 {
+
 	shutdown_windows();
 }
 
@@ -65,6 +69,10 @@ void d3d11renderer::system::run()
 		}
 
 	}
+
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
 	return;
 }
@@ -168,6 +176,16 @@ void d3d11renderer::system::initialize_windows(int& screenWidth, int& screenHeig
 	// Hide the mouse cursor.
 	//ShowCursor(false);
 
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplWin32_Init(m_hwnd);
+
 	return;
 }
 
@@ -183,7 +201,7 @@ void d3d11renderer::system::shutdown_windows()
 	}
 
 	// Remove the window.
-	DestroyWindow(m_hwnd);
+	//DestroyWindow(m_hwnd);
 	m_hwnd = nullptr;
 
 	// Remove the application instance.
@@ -195,6 +213,8 @@ void d3d11renderer::system::shutdown_windows()
 
 	return;
 }
+
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 LRESULT CALLBACK d3d11renderer::system::message_handler(HWND hwnd, UINT umsg, WPARAM wparam, LPARAM lparam)
 {
@@ -230,6 +250,10 @@ LRESULT CALLBACK d3d11renderer::system::message_handler(HWND hwnd, UINT umsg, WP
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 {
+	if (ImGui_ImplWin32_WndProcHandler(hwnd, umessage, wparam, lparam))
+		return true;
+
+
 	switch (umessage)
 	{
 			// Check if the window is being destroyed.
@@ -245,6 +269,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT umessage, WPARAM wparam, LPARAM lparam)
 			PostQuitMessage(0);
 			return 0;
 		}
+
 
 		// All other messages pass to the message handler in the system class.
 		default:

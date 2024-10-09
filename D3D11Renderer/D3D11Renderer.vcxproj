@@ -114,8 +114,10 @@
   <ItemGroup>
     <ClInclude Include="Core\application.h" />
     <ClInclude Include="Core\camera.h" />
+    <ClInclude Include="Core\camera_imgui.h" />
     <ClInclude Include="Core\color_shader.h" />
     <ClInclude Include="Core\d3dclass.h" />
+    <ClInclude Include="Core\imgui_window.h" />
     <ClInclude Include="Core\light.h" />
     <ClInclude Include="Core\light_shader.h" />
     <ClInclude Include="Core\model.h" />
