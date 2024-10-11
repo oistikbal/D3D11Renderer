@@ -3,10 +3,14 @@
 #include <d3d11.h>
 #include <directxmath.h>
 #include <wrl/client.h>
-#include "texture.h"
 #include <memory>
 #include <fstream>
 #include <vector>
+#include <unordered_map>
+
+#include "texture.h"
+#include "tiny_obj_loader.h"
+
 
 class model
 {
@@ -18,32 +22,35 @@ private:
 		DirectX::XMFLOAT3 normal;
 	};
 
-	struct ModelType
-	{
-		float x, y, z;
-		float tu, tv;
-		float nx, ny, nz;
-	};
 public:
-	model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* modelfilename, const wchar_t* texturefilename);
+	struct SubMesh
+	{
+		int startIndex;
+		int indexCount;
+		std::shared_ptr<texture> texture;
+	};
+
+
+	model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* modelfilename, const char* mtlbasepath);
 	~model();
 
 	void render(ID3D11DeviceContext*);
-	int get_index_count();
-
-	ID3D11ShaderResourceView* get_texture();
+	const std::vector<SubMesh>& get_sub_meshes() const;
 
 private:
 	bool initialize_buffers(ID3D11Device*);
 	void render_buffers(ID3D11DeviceContext*);
 
-	bool load_texture(ID3D11Device*, ID3D11DeviceContext*, const wchar_t* filename);
+	bool load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* mtlbasepath, const std::vector<tinyobj::material_t>& materials);
 
-	bool load_model(const wchar_t* modelfilename);
+	bool load_model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* modelfilename, const char* mtlPath);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer, m_indexBuffer;
-	std::shared_ptr<texture> m_texture;
-	int m_vertexCount, m_indexCount;
-	std::vector<ModelType> m_model;
+	std::vector<VertexType> m_vertices;
+	std::vector<unsigned int> m_indices;
+	std::vector<SubMesh> m_submeshes;
+
+	// A map from material name to texture resource
+	std::unordered_map<std::string, std::shared_ptr<texture>> m_textures;
 };

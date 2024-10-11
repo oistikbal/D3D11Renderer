@@ -101,6 +101,7 @@
     <ClCompile Include="Core\model.cpp" />
     <ClCompile Include="Core\texture.cpp" />
     <ClCompile Include="Core\texture_shader.cpp" />
+    <ClCompile Include="Core\tiny_obj_loader.cc" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_dx11.cpp" />
@@ -123,6 +124,7 @@
     <ClInclude Include="Core\model.h" />
     <ClInclude Include="Core\texture.h" />
     <ClInclude Include="Core\texture_shader.h" />
+    <ClInclude Include="Core\tiny_obj_loader.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
     <ClInclude Include="imgui\imgui_impl_dx11.h" />

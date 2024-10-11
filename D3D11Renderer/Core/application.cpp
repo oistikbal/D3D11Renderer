@@ -21,10 +21,12 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light->set_specular_power(32.0f);
 
 
-		wchar_t modelFilename[128];
-		wcscpy_s(modelFilename, L"Models\\sphere.txt");;
+		char modelFilename[255];
+		char mtlFileName[256];
+		strcpy_s(modelFilename, "Models\\untitled.obj"); // Path to the OBJ file
+		strcpy_s(mtlFileName, "Models\\");
 
-		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), modelFilename, L"Images\\brick.png");
+		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), (const char*)modelFilename, (const char*)mtlFileName);
 
 		ImGui_ImplDX11_Init(m_d3d->get_device(), m_d3d->get_device_context());
 	}
@@ -98,12 +100,20 @@ bool d3d11renderer::application::render(float rotation)
 
 	m_model->render(m_d3d->get_device_context());
 
-	// Render the model using the color shader.
-	result = m_lightShader->render(m_d3d->get_device_context(), m_model->get_index_count(), worldMatrix, viewMatrix, projectionMatrix, m_model->get_texture(), m_light->get_direction(),
-		m_light->get_diffuse_color(), m_light->get_ambient_color(), m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
-	if (!result)
+	for (const auto& subMesh : m_model->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
 	{
-		return false;
+		// Retrieve the texture associated with the current sub-mesh
+		ID3D11ShaderResourceView* texture = subMesh.texture ? subMesh.texture->get_texture() : nullptr; // Ensure texture retrieval is safe
+
+		// Set shader parameters, including the texture
+		result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, worldMatrix, viewMatrix, projectionMatrix,
+			texture, m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
+			m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
+
+		// Optionally, check the result for errors
+		if (!result) {
+			// Handle any rendering errors
+		}
 	}
 
 

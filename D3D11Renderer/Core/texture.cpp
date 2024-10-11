@@ -16,7 +16,10 @@ texture::~texture()
 
 ID3D11ShaderResourceView* texture::get_texture()
 {
-    return m_textureView.Get();
+    if (m_textureView != nullptr)
+        return m_textureView.Get();
+    else
+        return nullptr;
 }
 
 bool texture::initialize(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const wchar_t* filename)
