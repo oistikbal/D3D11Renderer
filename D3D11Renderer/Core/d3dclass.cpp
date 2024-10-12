@@ -1,5 +1,5 @@
 #include <stdexcept>
-
+#include <string>
 #include "d3dclass.h"
 
 
@@ -81,10 +81,17 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	displayModeList = nullptr;
 
 
+	RECT clientRect;
+	GetClientRect(hwnd, &clientRect);
+
+	// The width and height of the renderable area
+	int renderWidth = clientRect.right - clientRect.left;
+	int renderHeight = clientRect.bottom - clientRect.top;
+
 	// Initialize swap chain description
 	swapChainDesc.BufferCount = 1;
-	swapChainDesc.BufferDesc.Width = screenWidth;
-	swapChainDesc.BufferDesc.Height = screenHeight;
+	swapChainDesc.BufferDesc.Width = renderWidth;
+	swapChainDesc.BufferDesc.Height = renderHeight;
 	swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	if (m_vsync_enabled)
@@ -128,8 +135,8 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	ZeroMemory(&depthBufferDesc, sizeof(depthBufferDesc));
 
 	// Set up the description of the depth buffer.
-	depthBufferDesc.Width = screenWidth;
-	depthBufferDesc.Height = screenHeight;
+	depthBufferDesc.Width = renderWidth;
+	depthBufferDesc.Height = renderHeight;
 	depthBufferDesc.MipLevels = 1;
 	depthBufferDesc.ArraySize = 1;
 	depthBufferDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -221,8 +228,8 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	if (FAILED(result))
 	throw std::runtime_error("Failed to create blend state");
 
-	m_viewport.Width = (float)screenWidth;
-	m_viewport.Height = (float)screenHeight;
+	m_viewport.Width = (float)renderWidth;
+	m_viewport.Height = (float)renderHeight;
 	m_viewport.MinDepth = 0.0f;
 	m_viewport.MaxDepth = 1.0f;
 	m_viewport.TopLeftX = 0.0f;
@@ -231,12 +238,12 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	// Create the viewport.
 	m_deviceContext->RSSetViewports(1, &m_viewport);
 	fieldOfView = DirectX::XM_PIDIV4; // 45 degrees
-	screenAspect = static_cast<float>(screenWidth) / static_cast<float>(screenHeight);
+	screenAspect = static_cast<float>(renderWidth) / static_cast<float>(renderHeight);
 	m_projectionMatrix = DirectX::XMMatrixPerspectiveFovLH(fieldOfView, screenAspect, screenNear, screenDepth);
 
 	m_worldMatrix = DirectX::XMMatrixIdentity();
 
-	m_orthoMatrix = DirectX::XMMatrixOrthographicLH((float)screenWidth, (float)screenHeight, screenNear, screenDepth);
+	m_orthoMatrix = DirectX::XMMatrixOrthographicLH((float)renderWidth, (float)renderHeight, screenNear, screenDepth);
 
 
 	m_isInitialized = true;
@@ -344,7 +351,8 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 	if (width <= 0 || height <= 0) 
 		return;
 
-
+	OutputDebugStringA(std::to_string(width).c_str());
+	OutputDebugStringA(std::to_string(height).c_str());
 	if (!m_deviceContext) return;
 
 	// Ensure any views or buffers are released before resizing
