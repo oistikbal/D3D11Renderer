@@ -351,8 +351,6 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 	if (width <= 0 || height <= 0) 
 		return;
 
-	OutputDebugStringA(std::to_string(width).c_str());
-	OutputDebugStringA(std::to_string(height).c_str());
 	if (!m_deviceContext) return;
 
 	// Ensure any views or buffers are released before resizing

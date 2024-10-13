@@ -2,6 +2,7 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_win32.h"
 #include "imgui/imgui_impl_dx11.h"
+#include <chrono>
 
 static d3d11renderer::system* g_system;
 
@@ -60,8 +61,12 @@ void d3d11renderer::system::run()
 		}
 		else
 		{
-			// Otherwise do the frame processing.
-			result = frame();
+			static auto previous_time = std::chrono::high_resolution_clock::now();
+			auto current_time = std::chrono::high_resolution_clock::now();
+			std::chrono::duration<float> delta_time = current_time - previous_time;
+			previous_time = current_time;
+
+			result = frame(delta_time.count());
 			if (!result)
 			{
 				done = true;
@@ -77,7 +82,7 @@ void d3d11renderer::system::run()
 	return;
 }
 
-bool d3d11renderer::system::frame()
+bool d3d11renderer::system::frame(float deltaTime)
 {
 	bool result;
 
@@ -89,7 +94,7 @@ bool d3d11renderer::system::frame()
 	}
 
 	// Do the frame processing for the application class object.
-	result = m_application->frame();
+	result = m_application->frame(deltaTime);
 	if (!result)
 	{
 		return false;

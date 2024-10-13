@@ -24,7 +24,7 @@ namespace d3d11renderer
 		~application();
 
 		void shutdown();
-		bool frame();
+		bool frame(float deltaTime);
 		void resize(int width, int height);
 
 	private:

@@ -18,7 +18,7 @@ namespace d3d11renderer {
 
 		LRESULT CALLBACK message_handler(HWND, UINT, WPARAM, LPARAM);
 	private:
-		bool frame();
+		bool frame(float deltaTime);
 		void initialize_windows(int&, int&);
 		void shutdown_windows();
 

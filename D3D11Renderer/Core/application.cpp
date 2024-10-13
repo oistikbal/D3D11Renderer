@@ -45,21 +45,12 @@ void d3d11renderer::application::shutdown()
 {
 }
 
-bool d3d11renderer::application::frame()
+bool d3d11renderer::application::frame(float deltaTime)
 {
-	static float rotation = 0.0f;
 	bool result;
 
-
-	// Update the rotation variable each frame.
-	rotation -= 0.0174532925f * 0.1f;
-	if (rotation < 0.0f)
-	{
-		rotation += 360.0f;
-	}
-
 	// Render the graphics scene.
-	result = render(rotation);
+	result = render(deltaTime);
 	if (!result)
 	{
 		return false;
@@ -76,7 +67,7 @@ void d3d11renderer::application::resize(int width, int height)
 	m_d3d->resize(width, height);
 }
 
-bool d3d11renderer::application::render(float rotation)
+bool d3d11renderer::application::render(float deltaTime)
 {
 	DirectX::XMMATRIX worldMatrix, viewMatrix, projectionMatrix;
 	bool result;
@@ -85,13 +76,23 @@ bool d3d11renderer::application::render(float rotation)
 	// Clear the buffers to begin the scene.
 	m_d3d->begin_scene(0.3f,0.3f,0.3f,0.1f);
 
-	m_camera->frame(1.0f / 144.0f);
+	m_camera->frame(deltaTime);
 	m_camera->render();
 
 	// Get the world, view, and projection matrices from the camera and d3d objects.
 	m_d3d->get_world_matrix(worldMatrix);
 	m_camera->get_view_matrix(viewMatrix);
 	m_d3d->get_projection_matrix(projectionMatrix);
+
+
+	static float rotation = 0.0f;
+	// Update the rotation variable each frame.
+	rotation -= 0.0174532925f * deltaTime * 10.0f;
+	if (rotation < 0.0f)
+	{
+		rotation += 360.0f;
+	}
+
 
 	worldMatrix = DirectX::XMMatrixRotationY(rotation);
 
@@ -125,6 +126,9 @@ bool d3d11renderer::application::render(float rotation)
 		auto rot = m_camera->get_rotation(); // Assuming you have this function
 		ImGui::Begin("Camera");
 
+		ImGui::Text("Fps:");
+		ImGui::SameLine();
+		ImGui::Text("%.2f", 1.0f / deltaTime);
 		ImGui::Text("Position:");
 		ImGui::SameLine();
 		ImGui::Text("X: %.2f", pos.x);
