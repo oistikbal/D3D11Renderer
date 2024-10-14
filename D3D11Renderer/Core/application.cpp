@@ -23,8 +23,8 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 
 		char modelFilename[255];
 		char mtlFileName[256];
-		strcpy_s(modelFilename, "Models/untitled.obj"); // Path to the OBJ file
-		strcpy_s(mtlFileName, "Models/");
+		strcpy_s(modelFilename, "Models/DamagedHelmet/DamagedHelmet.gltf"); // Path to the OBJ file
+		strcpy_s(mtlFileName, "Models/DamagedHelmet");
 
 		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), (const char*)modelFilename, (const char*)mtlFileName);
 
