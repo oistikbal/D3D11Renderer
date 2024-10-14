@@ -1,7 +1,8 @@
 #include "model.h"
+
 #include <stdexcept>
-#include "tiny_obj_loader.h"
 #include <filesystem>
+
 
 model::model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* modelfilename, const char* mtlBasePath)
 {
@@ -101,104 +102,131 @@ void model::render_buffers(ID3D11DeviceContext* deviceContext)
 	return;
 }
 
-bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* mtlbasepath, const std::vector<tinyobj::material_t>& materials) {
-	for (const auto& material : materials) {
-		// Check if the material has a valid diffuse texture name
-		if (!material.diffuse_texname.empty()) {
-			// Construct the full texture path
-			std::string texturePath = std::string(mtlbasepath) + "/" + material.diffuse_texname;
+bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const aiScene* scene, const char* textureBasePath) {
+	// Iterate through all materials in the scene
+	for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
+		aiMaterial* material = scene->mMaterials[i];
 
-			// Convert the texture path to a wide string for DirectX
-			std::wstring wTexturePath(texturePath.begin(), texturePath.end());
+		// Check for diffuse texture (you can extend this for other types like specular, normals, etc.)
+		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
+			aiString textureFile;
 
-			// Check if the texture file exists
-			if (std::filesystem::exists(texturePath)) {
-				// Initialize the texture object if the file exists
-				auto textureObj = std::make_shared<texture>(device, deviceContext, wTexturePath.c_str());
+			// Get the texture file name from the material
+			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFile) == AI_SUCCESS) {
+				// Construct the full path to the texture
 
-				// Map the texture by the material name
-				m_textures[material.name] = textureObj;
+				std::string texturePath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+
+				// Convert to a wide string for DirectX
+				std::wstring wTexturePath(texturePath.begin(), texturePath.end());
+
+				// Check if the texture file exists
+				if (std::filesystem::exists(texturePath)) {
+					// Initialize the texture object using your texture class
+					auto textureObj = std::make_shared<texture>(device, deviceContext, wTexturePath.c_str());
+
+					// Get the material name and map the texture to it
+					aiString materialName;
+					material->Get(AI_MATKEY_NAME, materialName);
+
+					// Store the texture in the material texture map
+					m_textures[materialName.C_Str()] = textureObj;
+				}
 			}
 		}
 	}
-	return true; // Return true regardless of texture loading success or failure
+
+	return true;  // Return true regardless of texture loading success or failure
 }
 
 bool model::load_model(ID3D11Device* device, ID3D11DeviceContext* deviceContext,const char* modelfilename, const char* mtlPath)
 {
-	std::string warn, err;
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
+	Assimp::Importer importer;
+	const aiScene* scene = importer.ReadFile(modelfilename, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
 
-	bool ret = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, modelfilename, mtlPath);
-
-	// Check for warnings and errors
-	if (!warn.empty()) {
-		OutputDebugStringA(warn.c_str());
-		return false;
-	}
-	if (!err.empty()) {
-		OutputDebugStringA(warn.c_str());
+	// Check for errors
+	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+		OutputDebugStringA(importer.GetErrorString());
 		return false;
 	}
 
-	if (!load_texture(device, deviceContext, mtlPath, materials)) {
+	// Load textures
+	if (!load_texture(device, deviceContext, scene, mtlPath)) {
 		OutputDebugStringA("Failed to load textures.");
 		return false;
 	}
 
-	// Iterate through shapes to populate vertex and index data
-	for (size_t s = 0; s < shapes.size(); s++) {
-		size_t index_offset = 0;
-		for (size_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); f++) {
-			int fv = shapes[s].mesh.num_face_vertices[f];
-
-			// Per-face loop
-			for (size_t v = 0; v < fv; v++) {
-				// Access vertex
-				tinyobj::index_t idx = shapes[s].mesh.indices[index_offset + v];
-				tinyobj::real_t vx = attrib.vertices[3 * idx.vertex_index + 0];
-				tinyobj::real_t vy = attrib.vertices[3 * idx.vertex_index + 1];
-				tinyobj::real_t vz = attrib.vertices[3 * idx.vertex_index + 2];
-
-				// Access normal
-				tinyobj::real_t nx = attrib.normals[3 * idx.normal_index + 0];
-				tinyobj::real_t ny = attrib.normals[3 * idx.normal_index + 1];
-				tinyobj::real_t nz = attrib.normals[3 * idx.normal_index + 2];
-
-				// Access texcoords
-				tinyobj::real_t tx = attrib.texcoords[2 * idx.texcoord_index + 0];
-				tinyobj::real_t ty = attrib.texcoords[2 * idx.texcoord_index + 1];
-
-				// Fill the vertex array
-				VertexType vertex;
-				vertex.position = DirectX::XMFLOAT3(vx, vy, vz);
-				vertex.texture = DirectX::XMFLOAT2(tx, ty);
-				vertex.normal = DirectX::XMFLOAT3(nx, ny, nz);
-
-				m_vertices.push_back(vertex);
-				m_indices.push_back(static_cast<unsigned int>(m_indices.size())); // Auto-increment index
-			}
-			index_offset += fv;
-		}
-	}
-
-	// Create SubMesh objects for each shape
-	for (size_t s = 0; s < shapes.size(); s++) {
-		SubMesh subMesh;
-		subMesh.indexCount = shapes[s].mesh.indices.size();
-
-		// Retrieve the texture for this submesh if it has one
-		if (s < materials.size()) {
-			const auto& material = materials[shapes[s].mesh.material_ids[0]];
-			if (!material.name.empty()) {
-				subMesh.texture = m_textures[material.name];
-			}
-		}
-
-		m_submeshes.push_back(subMesh);
-	}
+	// Process meshes
+	process_node(device, deviceContext, scene->mRootNode, scene);
 
 	return true;
+} 
+
+void model::process_node(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiNode* node, const aiScene* scene)
+{
+	// Process each mesh in this node
+	for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+		process_mesh(device, deviceContext, mesh, scene);
+	}
+
+	// Process child nodes
+	for (unsigned int i = 0; i < node->mNumChildren; i++) {
+		process_node(device, deviceContext, node->mChildren[i], scene);
+	}
+}
+
+void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiMesh* mesh, const aiScene* scene)
+{
+	std::vector<VertexType> vertices;
+	std::vector<unsigned int> indices;
+
+	// Process vertices
+	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
+		VertexType vertex;
+		vertex.position = DirectX::XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+
+		if (mesh->mTextureCoords[0]) { // Check if the mesh contains texture coordinates
+			vertex.texture = DirectX::XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
+		}
+		else {
+			vertex.texture = DirectX::XMFLOAT2(0.0f, 0.0f);
+		}
+
+		if (mesh->mNormals) { // Check if the mesh contains normals
+			vertex.normal = DirectX::XMFLOAT3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+		}
+
+		vertices.push_back(vertex);
+	}
+
+	// Process indices
+	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
+		aiFace face = mesh->mFaces[i];
+		for (unsigned int j = 0; j < face.mNumIndices; j++) {
+			indices.push_back(face.mIndices[j]);
+		}
+	}
+
+	// Now you have vertices and indices, you can use them to create buffers (DirectX) or for rendering.
+
+	// Store in your mesh data structures
+	m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
+	m_indices.insert(m_indices.end(), indices.begin(), indices.end());
+
+	// SubMesh for each material
+	SubMesh subMesh;
+	subMesh.indexCount = indices.size();
+
+	// Handle materials and textures
+	if (mesh->mMaterialIndex >= 0) {
+		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+		aiString texturePath;
+		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.texture = m_textures[material->GetName().C_Str()]; // Load the texture based on path
+		}
+	}
+
+	m_submeshes.push_back(subMesh);
+
 }

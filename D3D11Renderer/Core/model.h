@@ -7,9 +7,10 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
-
 #include "texture.h"
-#include "tiny_obj_loader.h"
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
 
 
 class model
@@ -41,9 +42,10 @@ private:
 	bool initialize_buffers(ID3D11Device*);
 	void render_buffers(ID3D11DeviceContext*);
 
-	bool load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* mtlbasepath, const std::vector<tinyobj::material_t>& materials);
-
+	bool load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const aiScene* scene, const char* textureBasePath);
 	bool load_model(ID3D11Device* device, ID3D11DeviceContext* deviceContext, const char* modelfilename, const char* mtlPath);
+	void process_node(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiNode* node, const aiScene* scene);
+	void process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContext, aiMesh* mesh, const aiScene* scene);
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_vertexBuffer, m_indexBuffer;
