@@ -130,7 +130,7 @@ bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 					material->Get(AI_MATKEY_NAME, materialName);
 
 					// Store the texture in the material texture map
-					m_textures[materialName.C_Str()] = textureObj;
+					m_textures[textureFile.C_Str()] = textureObj;
 				}
 			}
 		}
@@ -223,7 +223,7 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 		aiString texturePath;
 		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-			subMesh.texture = m_textures[material->GetName().C_Str()]; // Load the texture based on path
+			subMesh.texture = m_textures[texturePath.C_Str()]; // Load the texture based on path
 		}
 	}
 

@@ -139,17 +139,18 @@ void d3d11renderer::camera::move_backward(float deltaTime)
 void d3d11renderer::camera::strafe_left(float deltaTime)
 {
     DirectX::XMFLOAT3 right = get_right();
-    m_position.x -= right.x * m_moveSpeed * deltaTime;
-    m_position.y -= right.y * m_moveSpeed * deltaTime;
-    m_position.z -= right.z * m_moveSpeed * deltaTime;
+
+    m_position.x += right.x * m_moveSpeed * deltaTime;
+    m_position.y += right.y * m_moveSpeed * deltaTime;
+    m_position.z += right.z * m_moveSpeed * deltaTime;
 }
 
 void d3d11renderer::camera::strafe_right(float deltaTime)
 {
     DirectX::XMFLOAT3 right = get_right();
-    m_position.x += right.x * m_moveSpeed * deltaTime;
-    m_position.y += right.y * m_moveSpeed * deltaTime;
-    m_position.z += right.z * m_moveSpeed * deltaTime;
+    m_position.x -= right.x * m_moveSpeed * deltaTime;
+    m_position.y -= right.y * m_moveSpeed * deltaTime;
+    m_position.z -= right.z * m_moveSpeed * deltaTime;
 }
 
 void d3d11renderer::camera::smooth_rotate(float deltaX, float deltaY, float smoothFactor)

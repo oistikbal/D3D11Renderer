@@ -9,6 +9,7 @@
 #include "texture_shader.h"
 #include "light_shader.h"
 #include "light.h"
+#include "skybox.h"
 
 constexpr bool FULL_SCREEN = false;
 constexpr bool VSYNC_ENABLED = true;
@@ -33,7 +34,10 @@ namespace d3d11renderer
 		std::shared_ptr<d3d11renderer::d3dclass> m_d3d;
 		std::shared_ptr<camera> m_camera;
 		std::shared_ptr<model> m_model;
+		std::shared_ptr<model> m_sphere;
 		std::shared_ptr<light> m_light;
 		std::shared_ptr<light_shader> m_lightShader;
+		std::shared_ptr<skybox> m_skybox;
+
 	};
 }

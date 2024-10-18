@@ -19,15 +19,11 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light->set_direction(1.0f, 0.0f, 1.0f);
 		m_light->set_specular_color(0.0f, 0.0f, 0.0f, 0.0f);
 		m_light->set_specular_power(32.0f);
+		m_skybox = std::make_shared<skybox>(m_d3d->get_device(), m_d3d->get_device_context(), L"Skyboxes/kloppenheim_06_puresky_4k.hdr");
 
 
-		char modelFilename[255];
-		char mtlFileName[256];
-		strcpy_s(modelFilename, "Models/DamagedHelmet/DamagedHelmet.gltf"); // Path to the OBJ file
-		strcpy_s(mtlFileName, "Models/DamagedHelmet");
-
-		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), (const char*)modelFilename, (const char*)mtlFileName);
-
+		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/DamagedHelmet/DamagedHelmet.gltf", "Models/DamagedHelmet");
+		m_sphere = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/sphere.gltf", "Models/");
 		ImGui_ImplDX11_Init(m_d3d->get_device(), m_d3d->get_device_context());
 	}
 	catch (std::exception e) 
@@ -84,7 +80,18 @@ bool d3d11renderer::application::render(float deltaTime)
 	m_camera->get_view_matrix(viewMatrix);
 	m_d3d->get_projection_matrix(projectionMatrix);
 
+	m_d3d->set_culling(false);
+	m_d3d->set_depth(false);
 
+	m_sphere->render(m_d3d->get_device_context());
+
+	for (const auto& subMesh : m_sphere->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
+	{
+		m_skybox->render(m_d3d->get_device_context(), subMesh.indexCount);
+	}
+
+	m_d3d->set_culling(true);
+	m_d3d->set_depth(true);
 	static float rotation = 0.0f;
 	// Update the rotation variable each frame.
 	rotation -= 0.0174532925f * deltaTime * 10.0f;
@@ -95,10 +102,10 @@ bool d3d11renderer::application::render(float deltaTime)
 
 
 	worldMatrix = DirectX::XMMatrixRotationY(rotation);
+	worldMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2), worldMatrix);
 
 
 	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-
 	m_model->render(m_d3d->get_device_context());
 
 	for (const auto& subMesh : m_model->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
@@ -116,7 +123,6 @@ bool d3d11renderer::application::render(float deltaTime)
 			// Handle any rendering errors
 		}
 	}
-
 
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();

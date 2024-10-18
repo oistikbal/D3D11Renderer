@@ -107,9 +107,10 @@
     <ClCompile Include="Core\light.cpp" />
     <ClCompile Include="Core\light_shader.cpp" />
     <ClCompile Include="Core\model.cpp" />
+    <ClCompile Include="Core\skybox.cpp" />
+    <ClCompile Include="Core\stb_image.cpp" />
     <ClCompile Include="Core\texture.cpp" />
     <ClCompile Include="Core\texture_shader.cpp" />
-    <ClCompile Include="Core\tiny_obj_loader.cc" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_impl_dx11.cpp" />
@@ -123,13 +124,14 @@
   <ItemGroup>
     <ClInclude Include="Core\application.h" />
     <ClInclude Include="Core\camera.h" />
-    <ClInclude Include="Core\camera_imgui.h" />
     <ClInclude Include="Core\color_shader.h" />
     <ClInclude Include="Core\d3dclass.h" />
     <ClInclude Include="Core\imgui_window.h" />
     <ClInclude Include="Core\light.h" />
     <ClInclude Include="Core\light_shader.h" />
     <ClInclude Include="Core\model.h" />
+    <ClInclude Include="Core\skybox.h" />
+    <ClInclude Include="Core\stb_image.h" />
     <ClInclude Include="Core\texture.h" />
     <ClInclude Include="Core\texture_shader.h" />
     <ClInclude Include="Core\tiny_obj_loader.h" />
@@ -164,6 +166,14 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+    <FxCompile Include="Shaders\skyboxps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\skyboxvs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
     <FxCompile Include="Shaders\textureps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
@@ -176,11 +186,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\directxtk_desktop_win10.2024.9.5.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('..\packages\directxtk_desktop_win10.2024.9.5.1\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2024.9.5.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2024.9.5.1\build\native\directxtex_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2024.9.5.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2024.9.5.1\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2024.9.5.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2024.9.5.1\build\native\directxtex_desktop_win10.targets'))" />
   </Target>
 </Project>

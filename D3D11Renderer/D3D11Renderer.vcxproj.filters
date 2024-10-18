@@ -69,7 +69,10 @@
     <ClCompile Include="Core\light.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Core\tiny_obj_loader.cc">
+    <ClCompile Include="Core\stb_image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\skybox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -131,13 +134,16 @@
     <ClInclude Include="Core\light.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Core\camera_imgui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Core\imgui_window.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Core\tiny_obj_loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -151,5 +157,7 @@
     <FxCompile Include="Shaders\texturevs.hlsl" />
     <FxCompile Include="Shaders\lightps.hlsl" />
     <FxCompile Include="Shaders\lightvs.hlsl" />
+    <FxCompile Include="Shaders\skyboxvs.hlsl" />
+    <FxCompile Include="Shaders\skyboxps.hlsl" />
   </ItemGroup>
 </Project>

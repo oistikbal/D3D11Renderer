@@ -1,6 +1,5 @@
 #include "input.h"
 #include <windowsx.h>
-#pragma once
 
 d3d11renderer::input::input() : m_mouse_position{ 0, 0 }, m_mouse_wheel_delta(0)
 {

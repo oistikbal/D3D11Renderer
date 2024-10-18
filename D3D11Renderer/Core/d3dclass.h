@@ -29,6 +29,9 @@ namespace d3d11renderer
 		void resize(int width, int height);
 		bool is_initialized() const;
 
+		void set_culling(bool isOpen);
+		void set_depth(bool isOpen);
+
 	private:
 		bool m_isInitialized;
 		bool m_vsync_enabled;
@@ -41,7 +44,10 @@ namespace d3d11renderer
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_depthStencilBuffer;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_depthStencilState;
 		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_depthStencilView;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_skyboxDepthStencilState;
+		Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_skyboxDepthStencilView;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterState;
+		Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_skyRasterState;
 		Microsoft::WRL::ComPtr<ID3D11BlendState> m_blendState;
 		DirectX::XMMATRIX m_projectionMatrix;
 		DirectX::XMMATRIX m_worldMatrix;

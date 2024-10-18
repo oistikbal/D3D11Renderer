@@ -175,6 +175,18 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create depth stencil state");
 
+	depthStencilDesc.DepthEnable = false;
+	depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
+
+	depthStencilDesc.StencilEnable = false;
+	depthStencilDesc.StencilReadMask = 0xFF;
+	depthStencilDesc.StencilWriteMask = 0xFF;
+
+	result = m_device->CreateDepthStencilState(&depthStencilDesc, m_skyboxDepthStencilState.GetAddressOf());
+	if (FAILED(result))
+		throw std::runtime_error("Failed to create sky depth stencil state");
+
 	m_deviceContext->OMSetDepthStencilState(m_depthStencilState.Get(), 1);
 
 	// Create depth stencil view
@@ -185,6 +197,10 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	result = m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilViewDesc, m_depthStencilView.GetAddressOf());
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create depth stencil view");
+
+	result = m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), &depthStencilViewDesc, m_skyboxDepthStencilView.GetAddressOf());
+	if (FAILED(result))
+		throw std::runtime_error("Failed to create sky depth stencil view");
 
 	m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
 
@@ -203,6 +219,14 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	result = m_device->CreateRasterizerState(&rasterDesc, m_rasterState.GetAddressOf());
 	if (FAILED(result))
 		throw std::runtime_error("Failed to create rasterizer state");
+
+	rasterDesc.CullMode = D3D11_CULL_NONE;
+	rasterDesc.FillMode = D3D11_FILL_SOLID;
+	rasterDesc.DepthClipEnable = true;
+
+	result = m_device->CreateRasterizerState(&rasterDesc, m_skyRasterState.GetAddressOf());
+	if (FAILED(result))
+		throw std::runtime_error("Failed to create sky rasterizer state");
 
 	m_deviceContext->RSSetState(m_rasterState.Get());
 
@@ -251,10 +275,6 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 
 d3d11renderer::d3dclass::~d3dclass()
 {
-	if (m_swapChain)
-	{
-		m_swapChain->SetFullscreenState(false, NULL);
-	}
 
 }
 
@@ -277,6 +297,7 @@ void d3d11renderer::d3dclass::begin_scene(float red, float green, float blue, fl
 
 	// Clear the depth buffer.
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+	m_deviceContext->ClearDepthStencilView(m_skyboxDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	m_deviceContext->OMSetBlendState(m_blendState.Get(), nullptr, 0xffffffff); // Set blend state with no specific blend factor
 
@@ -357,6 +378,7 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 	m_renderTargetView.Reset();
 	m_depthStencilView.Reset();
 	m_depthStencilBuffer.Reset();
+	m_skyboxDepthStencilView.Reset();
 
 	// Resize the swap chain
 	HRESULT hr = m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
@@ -396,6 +418,12 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 		return;
 	}
 
+	hr = m_device->CreateDepthStencilView(m_depthStencilBuffer.Get(), nullptr, m_skyboxDepthStencilView.GetAddressOf());
+	if (FAILED(hr)) {
+		// Handle error
+		return;
+	}
+
 
 	// Bind the render target view and depth stencil view to the output-merger stage
 	m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
@@ -419,4 +447,20 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 bool d3d11renderer::d3dclass::is_initialized() const
 {
 	return m_isInitialized;
+}
+
+void d3d11renderer::d3dclass::set_culling(bool isOpen)
+{
+	if(isOpen)
+		m_deviceContext->RSSetState(m_rasterState.Get());
+	else
+		m_deviceContext->RSSetState(m_skyRasterState.Get());
+}
+
+void d3d11renderer::d3dclass::set_depth(bool isOpen)
+{
+	if(isOpen)
+		m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+	else
+		m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_skyboxDepthStencilView.Get());
 }
