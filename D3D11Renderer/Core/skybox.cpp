@@ -17,12 +17,15 @@ skybox::~skybox()
 
 }
 
-void skybox::render(ID3D11DeviceContext* context, int indexCount)
+void skybox::render(ID3D11DeviceContext* context, int indexCount, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
 {
+    set_shader_parameters(context, viewMatrix, projectionMatrix);
+    context->IASetInputLayout(m_layout.Get());
 
     context->VSSetShader(m_vertexShader.Get(), nullptr, 0);
 
     context->PSSetShader(m_pixelShader.Get(), nullptr, 0);
+    context->PSSetSamplers(0, 1, m_sampleState.GetAddressOf());
     context->PSSetShaderResources(0, 1, m_cubemapSRV.GetAddressOf());
 
     // Set primitive topology to triangle list
@@ -71,7 +74,10 @@ void skybox::CreateCubemapTexture(ID3D11Device* device, ID3D11DeviceContext* dev
 
 void skybox::CreateShaders(ID3D11Device* device)
 {
-    // Compile and create shaders (you'll need to create your own shaders)
+    D3D11_BUFFER_DESC matrixBufferDesc;
+    D3D11_SAMPLER_DESC samplerDesc;
+    D3D11_INPUT_ELEMENT_DESC polygonLayout[2];
+    unsigned int numElements;
     ComPtr<ID3DBlob> vsBlob;
     ComPtr<ID3DBlob> psBlob;
 
@@ -90,6 +96,58 @@ void skybox::CreateShaders(ID3D11Device* device)
     else {
         throw std::runtime_error("Failed to compile pixel shader.");
     }
+
+    polygonLayout[0].SemanticName = "POSITION";
+    polygonLayout[0].SemanticIndex = 0;
+    polygonLayout[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;
+    polygonLayout[0].InputSlot = 0;
+    polygonLayout[0].AlignedByteOffset = 0;
+    polygonLayout[0].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    polygonLayout[0].InstanceDataStepRate = 0;
+
+    polygonLayout[1].SemanticName = "TEXCOORD";
+    polygonLayout[1].SemanticIndex = 0;
+    polygonLayout[1].Format = DXGI_FORMAT_R32G32_FLOAT;
+    polygonLayout[1].InputSlot = 0;
+    polygonLayout[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+    polygonLayout[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+    polygonLayout[1].InstanceDataStepRate = 0;
+
+    // Get a count of the elements in the layout.
+    numElements = sizeof(polygonLayout) / sizeof(polygonLayout[0]);
+
+    // Create the vertex input layout.
+    device->CreateInputLayout(polygonLayout, numElements, vsBlob->GetBufferPointer(),
+        vsBlob->GetBufferSize(), m_layout.GetAddressOf());
+
+
+    matrixBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    matrixBufferDesc.ByteWidth = sizeof(MatrixBufferType);
+    matrixBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    matrixBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    matrixBufferDesc.MiscFlags = 0;
+    matrixBufferDesc.StructureByteStride = 0;
+
+    // Create the constant buffer pointer so we can access the vertex shader constant buffer from within this class.
+    device->CreateBuffer(&matrixBufferDesc, NULL, m_matrixBuffer.GetAddressOf());
+
+    // Create a texture sampler state description.
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    samplerDesc.BorderColor[0] = 0;
+    samplerDesc.BorderColor[1] = 0;
+    samplerDesc.BorderColor[2] = 0;
+    samplerDesc.BorderColor[3] = 0;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    // Create the texture sampler state.
+    device->CreateSamplerState(&samplerDesc, m_sampleState.GetAddressOf());
 }
 
 void skybox::CreateShaderResourceView(ID3D11Device* device)
@@ -104,4 +162,37 @@ void skybox::CreateShaderResourceView(ID3D11Device* device)
     if (FAILED(hr)) {
         throw std::runtime_error("Failed to create shader resource view.");
     }
+}
+
+void skybox::set_shader_parameters(ID3D11DeviceContext* deviceContext, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix)
+{
+    HRESULT result;
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    MatrixBufferType* dataPtr;
+    unsigned int bufferNumber;
+
+
+    viewMatrix = DirectX::XMMatrixTranspose(viewMatrix);
+    projectionMatrix = DirectX::XMMatrixTranspose(projectionMatrix);
+
+    // Lock the constant buffer so it can be written to.
+    deviceContext->Map(m_matrixBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+
+    // Get a pointer to the data in the constant buffer.
+    dataPtr = (MatrixBufferType*)mappedResource.pData;
+
+    dataPtr->view = viewMatrix;
+    dataPtr->projection = projectionMatrix;
+
+    // Unlock the constant buffer.
+    deviceContext->Unmap(m_matrixBuffer.Get(), 0);
+
+    // Set the position of the constant buffer in the vertex shader.
+    bufferNumber = 0;
+
+    // Finanly set the constant buffer in the vertex shader with the updated values.
+    deviceContext->VSSetConstantBuffers(bufferNumber, 1, m_matrixBuffer.GetAddressOf());
+
+    // Set shader texture resource in the pixel shader.
+    deviceContext->PSSetShaderResources(0, 1, m_cubemapSRV.GetAddressOf());
 }

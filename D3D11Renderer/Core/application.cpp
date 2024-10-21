@@ -87,11 +87,12 @@ bool d3d11renderer::application::render(float deltaTime)
 
 	for (const auto& subMesh : m_sphere->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
 	{
-		m_skybox->render(m_d3d->get_device_context(), subMesh.indexCount);
+		m_skybox->render(m_d3d->get_device_context(), subMesh.indexCount, viewMatrix, projectionMatrix);
 	}
 
 	m_d3d->set_culling(true);
 	m_d3d->set_depth(true);
+
 	static float rotation = 0.0f;
 	// Update the rotation variable each frame.
 	rotation -= 0.0174532925f * deltaTime * 10.0f;
