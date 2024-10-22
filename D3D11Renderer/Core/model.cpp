@@ -107,30 +107,43 @@ bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	for (unsigned int i = 0; i < scene->mNumMaterials; i++) {
 		aiMaterial* material = scene->mMaterials[i];
 
-		// Check for diffuse texture (you can extend this for other types like specular, normals, etc.)
+		aiString textureFile;
+
+		// Load diffuse texture
 		if (material->GetTextureCount(aiTextureType_DIFFUSE) > 0) {
-			aiString textureFile;
-
-			// Get the texture file name from the material
 			if (material->GetTexture(aiTextureType_DIFFUSE, 0, &textureFile) == AI_SUCCESS) {
-				// Construct the full path to the texture
+				std::string diffusePath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wDiffusePath(diffusePath.begin(), diffusePath.end());
 
-				std::string texturePath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				if (std::filesystem::exists(diffusePath)) {
+					auto diffuseTexture = std::make_shared<texture>(device, deviceContext, wDiffusePath.c_str());
+					m_textures[textureFile.C_Str()] = diffuseTexture;
+				}
+			}
+		}
 
-				// Convert to a wide string for DirectX
-				std::wstring wTexturePath(texturePath.begin(), texturePath.end());
+		// Load normal map
+		if (material->GetTextureCount(aiTextureType_NORMALS) > 0) {
+			if (material->GetTexture(aiTextureType_NORMALS, 0, &textureFile) == AI_SUCCESS) {
+				std::string normalPath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wNormalPath(normalPath.begin(), normalPath.end());
 
-				// Check if the texture file exists
-				if (std::filesystem::exists(texturePath)) {
-					// Initialize the texture object using your texture class
-					auto textureObj = std::make_shared<texture>(device, deviceContext, wTexturePath.c_str());
+				if (std::filesystem::exists(normalPath)) {
+					auto normalTexture = std::make_shared<texture>(device, deviceContext, wNormalPath.c_str());
+					m_textures[textureFile.C_Str()] = normalTexture;
+				}
+			}
+		}
 
-					// Get the material name and map the texture to it
-					aiString materialName;
-					material->Get(AI_MATKEY_NAME, materialName);
+		// Load specular map (if applicable)
+		if (material->GetTextureCount(aiTextureType_SPECULAR) > 0) {
+			if (material->GetTexture(aiTextureType_SPECULAR, 0, &textureFile) == AI_SUCCESS) {
+				std::string specularPath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wSpecularPath(specularPath.begin(), specularPath.end());
 
-					// Store the texture in the material texture map
-					m_textures[textureFile.C_Str()] = textureObj;
+				if (std::filesystem::exists(specularPath)) {
+					auto specularTexture = std::make_shared<texture>(device, deviceContext, wSpecularPath.c_str());
+					m_textures[textureFile.C_Str()] = specularTexture;
 				}
 			}
 		}
@@ -186,15 +199,20 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		VertexType vertex;
 		vertex.position = DirectX::XMFLOAT3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
 
-		if (mesh->mTextureCoords[0]) { // Check if the mesh contains texture coordinates
+		if (mesh->mTextureCoords[0]) {
 			vertex.texture = DirectX::XMFLOAT2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y);
 		}
 		else {
 			vertex.texture = DirectX::XMFLOAT2(0.0f, 0.0f);
 		}
 
-		if (mesh->mNormals) { // Check if the mesh contains normals
+		if (mesh->mNormals) {
 			vertex.normal = DirectX::XMFLOAT3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
+		}
+
+		if (mesh->mTangents && mesh->mBitangents) {
+			vertex.tangent = DirectX::XMFLOAT3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z);
+			vertex.bitangent = DirectX::XMFLOAT3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
 		}
 
 		vertices.push_back(vertex);
@@ -208,25 +226,34 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		}
 	}
 
-	// Now you have vertices and indices, you can use them to create buffers (DirectX) or for rendering.
-
-	// Store in your mesh data structures
-	m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
-	m_indices.insert(m_indices.end(), indices.begin(), indices.end());
-
-	// SubMesh for each material
+	// Create the SubMesh for this mesh
 	SubMesh subMesh;
 	subMesh.indexCount = indices.size();
 
-	// Handle materials and textures
+	// Handle materials and assign textures
 	if (mesh->mMaterialIndex >= 0) {
 		aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
 		aiString texturePath;
+
+		// Assign diffuse texture
 		if (material->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-			subMesh.texture = m_textures[texturePath.C_Str()]; // Load the texture based on path
+			subMesh.diffuseTexture = m_textures[texturePath.C_Str()];
+		}
+
+		// Assign normal map texture
+		if (material->GetTexture(aiTextureType_NORMALS, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.normalTexture = m_textures[texturePath.C_Str()];
+		}
+
+		// Assign specular map texture
+		if (material->GetTexture(aiTextureType_SPECULAR, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.specularTexture = m_textures[texturePath.C_Str()];
 		}
 	}
 
+	// Store the vertices, indices, and subMesh
+	m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
+	m_indices.insert(m_indices.end(), indices.begin(), indices.end());
 	m_submeshes.push_back(subMesh);
 
 }

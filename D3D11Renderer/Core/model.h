@@ -21,6 +21,8 @@ private:
 		DirectX::XMFLOAT3 position;
 		DirectX::XMFLOAT2 texture;
 		DirectX::XMFLOAT3 normal;
+		DirectX::XMFLOAT3 tangent;
+		DirectX::XMFLOAT3 bitangent;
 	};
 
 public:
@@ -28,7 +30,9 @@ public:
 	{
 		int startIndex;
 		int indexCount;
-		std::shared_ptr<texture> texture;
+		std::shared_ptr<texture> diffuseTexture;  // Diffuse texture
+		std::shared_ptr<texture> normalTexture;   // Normal map
+		std::shared_ptr<texture> specularTexture; // Specular map
 	};
 
 

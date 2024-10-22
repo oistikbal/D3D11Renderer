@@ -16,6 +16,8 @@ struct VertexInputType
     float4 position : POSITION;
     float2 tex : TEXCOORD0;
     float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
 };
 
 struct PixelInputType
@@ -23,41 +25,42 @@ struct PixelInputType
     float4 position : SV_POSITION;
     float2 tex : TEXCOORD0;
     float3 normal : NORMAL;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
     float3 viewDirection : TEXCOORD1;
 };
-
 
 PixelInputType main(VertexInputType input)
 {
     PixelInputType output;
     float4 worldPosition;
 
-
-	// Change the position vector to be 4 units for proper matrix calculations.
+	// Change the position vector to 4 components for matrix calculations
     input.position.w = 1.0f;
 
-	// Calculate the position of the vertex against the world, view, and projection matrices.
+	// Transform position from object space to clip space
     output.position = mul(input.position, worldMatrix);
     output.position = mul(output.position, viewMatrix);
     output.position = mul(output.position, projectionMatrix);
-    
-	// Store the texture coordinates for the pixel shader.
+
+	// Pass texture coordinates to pixel shader
     output.tex = input.tex;
     
-	// Calculate the normal vector against the world matrix only.
+	// Transform normal, tangent, and bitangent vectors to world space
     output.normal = mul(input.normal, (float3x3) worldMatrix);
-	
-    // Normalize the normal vector.
-    output.normal = normalize(output.normal);
+    output.tangent = mul(input.tangent, (float3x3) worldMatrix);
+    output.bitangent = mul(input.bitangent, (float3x3) worldMatrix);
 
-	// Calculate the position of the vertex in the world.
+    // Normalize the vectors
+    output.normal = normalize(output.normal);
+    output.tangent = normalize(output.tangent);
+    output.bitangent = normalize(output.bitangent);
+
+	// Calculate the world position of the vertex
     worldPosition = mul(input.position, worldMatrix);
 
-    // Determine the viewing direction based on the position of the camera and the position of the vertex in the world.
-    output.viewDirection = cameraPosition.xyz - worldPosition.xyz;
-	
-    // Normalize the viewing direction vector.
-    output.viewDirection = normalize(output.viewDirection);
+	// Calculate the view direction (camera to the vertex) and normalize it
+    output.viewDirection = normalize(cameraPosition.xyz - worldPosition.xyz);
 
     return output;
 }
