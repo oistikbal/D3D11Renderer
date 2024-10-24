@@ -33,6 +33,9 @@ public:
 		std::shared_ptr<texture> diffuseTexture;  // Diffuse texture
 		std::shared_ptr<texture> normalTexture;   // Normal map
 		std::shared_ptr<texture> specularTexture; // Specular map
+		std::shared_ptr<texture> aoTexture;           // AO map
+		std::shared_ptr<texture> emissiveTexture;     // Emissive map
+		std::shared_ptr<texture> metalRoughnessTexture; // Metallic-Roughness map
 	};
 
 

@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <wrl/client.h>
+#include <winrt/base.h>
 
 namespace d3d11renderer 
 {

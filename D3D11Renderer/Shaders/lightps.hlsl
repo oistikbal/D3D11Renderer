@@ -1,17 +1,22 @@
 Texture2D diffuseMap : register(t0);
 Texture2D normalMap : register(t1);
 Texture2D specularMap : register(t2);
+Texture2D aoMap : register(t3);
+Texture2D emissiveMap : register(t4);
+Texture2D metalRoughnessMap : register(t5);
 SamplerState SampleType : register(s0);
 
+// Inside cbuffer (if required):
 cbuffer LightBuffer
 {
-    float4 ambientColor;
-    float4 diffuseColor;
-    float3 lightDirection;
-    float specularPower;
-    float4 specularColor;
+    float4 ambientColor; // Existing lighting data
+    float4 diffuseColor; // Existing lighting data
+    float3 lightDirection; // Existing lighting data
+    float specularPower; // Existing lighting data
+    float4 specularColor; // Existing lighting data
 };
 
+// Update the PixelInputType to include new texture coordinates (optional if using the same texture coordinates)
 struct PixelInputType
 {
     float4 position : SV_POSITION;
@@ -22,6 +27,7 @@ struct PixelInputType
     float3 viewDirection : TEXCOORD1;
 };
 
+// Main pixel shader
 float4 main(PixelInputType input) : SV_TARGET
 {
     float4 textureColor;
@@ -33,50 +39,60 @@ float4 main(PixelInputType input) : SV_TARGET
     float3 normalTangentSpace;
     float3 normalWorldSpace;
 
-	// Sample the diffuse texture
+    // Sample the diffuse texture (or base color in PBR)
     textureColor = diffuseMap.Sample(SampleType, input.tex);
 
-	// Set default output color to ambient light
-    color = ambientColor;
+    // Sample the AO map (ambient occlusion) and factor it into ambient lighting
+    float ao = aoMap.Sample(SampleType, input.tex).r;
 
-	// Sample the normal map and transform it from [0, 1] to [-1, 1]
+    // Sample the Emissive map
+    float4 emissive = emissiveMap.Sample(SampleType, input.tex);
+
+    // Sample the metal-roughness map and extract metalness and roughness
+    float4 metalRoughness = metalRoughnessMap.Sample(SampleType, input.tex);
+    float metalness = metalRoughness.r;
+    float roughness = metalRoughness.g;
+
+    // Set default output color to ambient light (factor in AO)
+    color = ambientColor * ao;
+
+    // Sample and transform the normal map
     normalTangentSpace = normalMap.Sample(SampleType, input.tex).xyz * 2.0f - 1.0f;
 
-	// Construct the TBN matrix
+    // Construct the TBN matrix
     float3x3 TBN = float3x3(normalize(input.tangent), normalize(input.bitangent), normalize(input.normal));
 
-	// Transform the normal from tangent space to world space
+    // Transform the normal from tangent space to world space
     normalWorldSpace = mul(normalTangentSpace, TBN);
-
-	// Normalize the result
     normalWorldSpace = normalize(normalWorldSpace);
 
-	// Invert the light direction for lighting calculations
+    // Invert the light direction for lighting calculations
     lightDir = -normalize(lightDirection);
 
-	// Calculate the diffuse light intensity (N·L)
+    // Calculate diffuse light intensity
     lightIntensity = saturate(dot(normalWorldSpace, lightDir));
 
     if (lightIntensity > 0.0f)
     {
-        // Add the diffuse component
+        // Add diffuse lighting
         color += diffuseColor * lightIntensity;
 
-        // Calculate reflection vector based on light intensity, normal, and light direction
+        // Calculate reflection and specular component
         reflection = normalize(2.0f * lightIntensity * normalWorldSpace - lightDir);
-
-		// Calculate the specular intensity using reflection vector, view direction, and specular power
         float specIntensity = pow(saturate(dot(reflection, normalize(input.viewDirection))), specularPower);
+        specular = specularColor * specIntensity;
 
-		// Sample the specular map and scale by specular intensity
-        specular = specularMap.Sample(SampleType, input.tex) * specIntensity;
-
-		// Add the specular color component to the final color
-        color = saturate(color + specular * specularColor);
+        // Modulate the specular highlight by roughness
+        color += specular * (1.0f - roughness);
     }
 
-	// Combine the final color with the texture color
-    color = color * textureColor;
+    // Combine metallic reflection and diffuse color
+    float3 F0 = lerp(float3(0.04f, 0.04f, 0.04f), textureColor.rgb, metalness);
+    color.rgb = lerp(color.rgb, F0, metalness);
 
+    // Combine the final color with texture, ambient occlusion, and emissive
+    color.rgb = saturate(color.rgb * textureColor.rgb + emissive.rgb);
+    color.a = 1.0f;
     return color;
 }
+

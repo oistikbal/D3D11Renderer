@@ -10,15 +10,15 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_d3d = std::make_shared<d3d11renderer::d3dclass>(screenWidth, screenHeight, VSYNC_ENABLED, hwnd, FULL_SCREEN, SCREEN_DEPTH, SCREEN_NEAR);
 		m_camera = std::make_shared<camera>(input);
 		m_camera->set_position(0.0f, 0.0f, 10.0f);
-		m_camera->set_rotation(0.0f, DirectX::XMConvertToRadians(90.0f), 0.0f);
+		m_camera->set_rotation(0.0f, DirectX::XM_PIDIV2, 0.0f);
 
 		m_lightShader = std::make_shared<light_shader>(m_d3d->get_device(), hwnd);
 		m_light = std::make_shared<light>();
 		m_light->set_ambient_color(0.15f, 0.15f, 0.15f, 1.0f);
 		m_light->set_diffuse_color(1.0f, 1.0f, 1.0f, 1.0f);
 		m_light->set_direction(0.0f, 0.0f, 1.0f);
-		m_light->set_specular_color(0.0f, 0.0f, 0.0f, 0.0f);
-		m_light->set_specular_power(32.0f);
+		m_light->set_specular_color(1.0f, 1.0f, 1.0f, 1.0f);
+		m_light->set_specular_power(256.0f);
 		m_skybox = std::make_shared<skybox>(m_d3d->get_device(), m_d3d->get_device_context(), L"Skyboxes/kloppenheim_06_puresky_4k.hdr");
 
 
@@ -112,13 +112,17 @@ bool d3d11renderer::application::render(float deltaTime)
 	for (const auto& subMesh : m_model->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
 	{
 		// Retrieve the texture associated with the current sub-mesh
-		ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr; // Ensure texture retrieval is safe
-		ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr; // Ensure texture retrieval is safe
-		ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr; // Ensure texture retrieval is safe
+		ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr;
+		ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr;
+		ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr;
+		ID3D11ShaderResourceView* ao = subMesh.aoTexture ? subMesh.aoTexture->get_texture() : nullptr;
+		ID3D11ShaderResourceView* emissive = subMesh.emissiveTexture ? subMesh.emissiveTexture->get_texture() : nullptr;
+		ID3D11ShaderResourceView* metal = subMesh.metalRoughnessTexture ? subMesh.metalRoughnessTexture->get_texture() : nullptr;
 
 		// Set shader parameters, including the texture
 		result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, worldMatrix, viewMatrix, projectionMatrix,
-			diffuse, normal, specular, m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
+			diffuse, normal, specular, ao, emissive, metal,
+			m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
 			m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
 
 		// Optionally, check the result for errors

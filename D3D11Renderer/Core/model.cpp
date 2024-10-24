@@ -147,6 +147,42 @@ bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 				}
 			}
 		}
+
+		if (material->GetTextureCount(aiTextureType_LIGHTMAP) > 0) {
+			if (material->GetTexture(aiTextureType_LIGHTMAP, 0, &textureFile) == AI_SUCCESS) {
+				std::string specularPath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wSpecularPath(specularPath.begin(), specularPath.end());
+
+				if (std::filesystem::exists(specularPath)) {
+					auto specularTexture = std::make_shared<texture>(device, deviceContext, wSpecularPath.c_str());
+					m_textures[textureFile.C_Str()] = specularTexture;
+				}
+			}
+		}
+
+		if (material->GetTextureCount(aiTextureType_EMISSIVE) > 0) {
+			if (material->GetTexture(aiTextureType_EMISSIVE, 0, &textureFile) == AI_SUCCESS) {
+				std::string specularPath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wSpecularPath(specularPath.begin(), specularPath.end());
+
+				if (std::filesystem::exists(specularPath)) {
+					auto specularTexture = std::make_shared<texture>(device, deviceContext, wSpecularPath.c_str());
+					m_textures[textureFile.C_Str()] = specularTexture;
+				}
+			}
+		}
+
+		if (material->GetTextureCount(aiTextureType_METALNESS) > 0) {
+			if (material->GetTexture(aiTextureType_METALNESS, 0, &textureFile) == AI_SUCCESS) {
+				std::string specularPath = std::string(textureBasePath) + "/" + textureFile.C_Str();
+				std::wstring wSpecularPath(specularPath.begin(), specularPath.end());
+
+				if (std::filesystem::exists(specularPath)) {
+					auto specularTexture = std::make_shared<texture>(device, deviceContext, wSpecularPath.c_str());
+					m_textures[textureFile.C_Str()] = specularTexture;
+				}
+			}
+		}
 	}
 
 	return true;  // Return true regardless of texture loading success or failure
@@ -248,6 +284,20 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		// Assign specular map texture
 		if (material->GetTexture(aiTextureType_SPECULAR, 0, &texturePath) == AI_SUCCESS) {
 			subMesh.specularTexture = m_textures[texturePath.C_Str()];
+		}
+
+		if (material->GetTexture(aiTextureType_LIGHTMAP, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.aoTexture = m_textures[texturePath.C_Str()];
+		}
+
+		// Assign Emissive texture
+		if (material->GetTexture(aiTextureType_EMISSIVE, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.emissiveTexture = m_textures[texturePath.C_Str()];
+		}
+
+		// Assign Metal-Roughness texture
+		if (material->GetTexture(aiTextureType_METALNESS, 0, &texturePath) == AI_SUCCESS) {
+			subMesh.metalRoughnessTexture = m_textures[texturePath.C_Str()];
 		}
 	}
 

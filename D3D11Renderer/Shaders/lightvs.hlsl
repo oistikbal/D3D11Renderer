@@ -1,11 +1,11 @@
-cbuffer MatrixBuffer
+cbuffer MatrixBuffer : register(b0)
 {
     matrix worldMatrix;
     matrix viewMatrix;
     matrix projectionMatrix;
 };
 
-cbuffer CameraBuffer
+cbuffer CameraBuffer : register(b1)
 {
     float3 cameraPosition;
     float padding;
