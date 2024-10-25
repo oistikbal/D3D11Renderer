@@ -75,6 +75,9 @@
     <ClCompile Include="Core\skybox.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Core\reinhard_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="imgui\imconfig.h">
@@ -146,6 +149,9 @@
     <ClInclude Include="Core\skybox.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Core\reinhard_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\colorvs.hlsl" />
@@ -159,5 +165,7 @@
     <FxCompile Include="Shaders\lightvs.hlsl" />
     <FxCompile Include="Shaders\skyboxvs.hlsl" />
     <FxCompile Include="Shaders\skyboxps.hlsl" />
+    <FxCompile Include="Shaders\quadvs.hlsl" />
+    <FxCompile Include="Shaders\reinhardps.hlsl" />
   </ItemGroup>
 </Project>

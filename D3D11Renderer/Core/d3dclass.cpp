@@ -205,6 +205,29 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 
 	m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
 
+
+	// In your d3dclass constructor or initialization method
+	D3D11_TEXTURE2D_DESC toneMapTextureDesc = {};
+	toneMapTextureDesc.Width = renderWidth;
+	toneMapTextureDesc.Height = renderHeight;
+	toneMapTextureDesc.MipLevels = 1;
+	toneMapTextureDesc.ArraySize = 1;
+	toneMapTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // High dynamic range
+	toneMapTextureDesc.SampleDesc.Count = 4;
+	toneMapTextureDesc.SampleDesc.Quality = 1;
+	toneMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	toneMapTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	result = m_device->CreateTexture2D(&toneMapTextureDesc, nullptr, m_toneMapTexture.GetAddressOf());
+	if (FAILED(result))
+		throw std::runtime_error("Failed to create tone map texture");
+
+	result = m_device->CreateRenderTargetView(m_toneMapTexture.Get(), nullptr, m_toneMapRTV.GetAddressOf());
+	if (FAILED(result))
+		throw std::runtime_error("Failed to create tone map render target view");
+
+	m_device->CreateShaderResourceView(m_toneMapTexture.Get(), nullptr, m_toneMapSRV.GetAddressOf());
+
 	// Initialize rasterizer state
 	rasterDesc.AntialiasedLineEnable = false;
 	rasterDesc.CullMode = D3D11_CULL_BACK;
@@ -291,10 +314,9 @@ void d3d11renderer::d3dclass::begin_scene(float red, float green, float blue, fl
 	color[3] = alpha;
 
 
-	set_back_buffer_render_target();
-
-	// Clear the back buffer.
+	m_deviceContext->ClearRenderTargetView(m_toneMapRTV.Get(), color);
 	m_deviceContext->ClearRenderTargetView(m_renderTargetView.Get(), color);
+	m_deviceContext->OMSetRenderTargets(1, m_toneMapRTV.GetAddressOf(), m_depthStencilView.Get());
 
 	// Clear the depth buffer.
 	m_deviceContext->ClearDepthStencilView(m_depthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -307,6 +329,11 @@ void d3d11renderer::d3dclass::begin_scene(float red, float green, float blue, fl
 }
 
 void d3d11renderer::d3dclass::end_scene()
+{
+	m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+}
+
+void d3d11renderer::d3dclass::present()
 {
 	if (m_vsync_enabled)
 	{
@@ -380,11 +407,38 @@ void d3d11renderer::d3dclass::resize(int width, int height)
 	m_depthStencilView.Reset();
 	m_depthStencilBuffer.Reset();
 	m_skyboxDepthStencilView.Reset();
+	m_toneMapTexture.Reset();
+	m_toneMapRTV.Reset();
+
+
 
 	// Resize the swap chain
 	HRESULT hr = m_swapChain->ResizeBuffers(0, width, height, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr))
 		throw std::runtime_error("Failed to resize swapChain");
+
+
+	// In your d3dclass constructor or initialization method
+	D3D11_TEXTURE2D_DESC toneMapTextureDesc = {};
+	toneMapTextureDesc.Width = width;
+	toneMapTextureDesc.Height = height;
+	toneMapTextureDesc.MipLevels = 1;
+	toneMapTextureDesc.ArraySize = 1;
+	toneMapTextureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; // High dynamic range
+	toneMapTextureDesc.SampleDesc.Count = 4;
+	toneMapTextureDesc.SampleDesc.Quality = 1;
+	toneMapTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	toneMapTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = m_device->CreateTexture2D(&toneMapTextureDesc, nullptr, m_toneMapTexture.GetAddressOf());
+	if (FAILED(hr))
+		throw std::runtime_error("Failed to create tone map texture");
+
+	hr = m_device->CreateRenderTargetView(m_toneMapTexture.Get(), nullptr, m_toneMapRTV.GetAddressOf());
+	if (FAILED(hr))
+		throw std::runtime_error("Failed to create tone map render target view");
+
+	m_device->CreateShaderResourceView(m_toneMapTexture.Get(), nullptr, m_toneMapSRV.GetAddressOf());
 
 	// Recreate the render target view with the resized back buffer
 	ComPtr<ID3D11Texture2D> backBuffer;
@@ -462,7 +516,12 @@ void d3d11renderer::d3dclass::set_culling(bool isOpen)
 void d3d11renderer::d3dclass::set_depth(bool isOpen)
 {
 	if(isOpen)
-		m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_depthStencilView.Get());
+		m_deviceContext->OMSetRenderTargets(1, m_toneMapRTV.GetAddressOf(), m_depthStencilView.Get());
 	else
-		m_deviceContext->OMSetRenderTargets(1, m_renderTargetView.GetAddressOf(), m_skyboxDepthStencilView.Get());
+		m_deviceContext->OMSetRenderTargets(1, m_toneMapRTV.GetAddressOf(), m_skyboxDepthStencilView.Get());
+}
+
+ID3D11ShaderResourceView* d3d11renderer::d3dclass::get_tonemap_srv()
+{
+	return m_toneMapSRV.Get();
 }

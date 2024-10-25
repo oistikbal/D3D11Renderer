@@ -20,6 +20,7 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light->set_specular_color(1.0f, 1.0f, 1.0f, 1.0f);
 		m_light->set_specular_power(256.0f);
 		m_skybox = std::make_shared<skybox>(m_d3d->get_device(), m_d3d->get_device_context(), L"Skyboxes/kloppenheim_06_puresky_4k.hdr");
+		m_reinhardShader = std::make_shared<reinhard_shader>(m_d3d->get_device(), hwnd);
 
 
 		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/DamagedHelmet/DamagedHelmet.gltf", "Models/DamagedHelmet");
@@ -131,41 +132,70 @@ bool d3d11renderer::application::render(float deltaTime)
 		}
 	}
 
+	m_d3d->end_scene();
+
+	static float exposure = 1.0f;         // Initial exposure
+	static float averageLuminance = 0.5f; // Average luminance
+	static float maxLuminance = 1.0f;     // Maximum luminance for clamping
+	static float burn = 1.0f;             // Burn threshold for tone mapping
+
+	m_reinhardShader->render(m_d3d->get_device_context(), m_d3d->get_tonemap_srv(), exposure, averageLuminance, maxLuminance, burn);
+
 	ImGui_ImplDX11_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 	{
 		auto pos = m_camera->get_position(); // Assuming you have this function
 		auto rot = m_camera->get_rotation(); // Assuming you have this function
-		ImGui::Begin("Camera");
+		ImGui::Begin("Settings");
+			if (ImGui::CollapsingHeader("Stats"))
+			{
+				ImGui::Text("Fps:");
+				ImGui::SameLine();
+				ImGui::Text("%.2f", 1.0f / deltaTime);
+			}
 
-		ImGui::Text("Fps:");
-		ImGui::SameLine();
-		ImGui::Text("%.2f", 1.0f / deltaTime);
-		ImGui::Text("Position:");
-		ImGui::SameLine();
-		ImGui::Text("X: %.2f", pos.x);
-		ImGui::SameLine();
-		ImGui::Text("Y: %.2f", pos.y);
-		ImGui::SameLine();
-		ImGui::Text("Z: %.2f", pos.z);
+			if (ImGui::CollapsingHeader("Camera"))
+			{
+				ImGui::Text("Position:");
+				ImGui::SameLine();
+				ImGui::Text("X: %.2f", pos.x);
+				ImGui::SameLine();
+				ImGui::Text("Y: %.2f", pos.y);
+				ImGui::SameLine();
+				ImGui::Text("Z: %.2f", pos.z);
 
 
-		// Display camera rotation horizontally
-		ImGui::Text("Rotation:");
-		ImGui::SameLine();
-		ImGui::Text("X: %.2f", DirectX::XMConvertToDegrees(rot.x));
-		ImGui::SameLine();
-		ImGui::Text("Y: %.2f", DirectX::XMConvertToDegrees(rot.y));
-		ImGui::SameLine();
-		ImGui::Text("Z: %.2f", DirectX::XMConvertToDegrees(rot.z));
+				// Display camera rotation horizontally
+				ImGui::Text("Rotation:");
+				ImGui::SameLine();
+				ImGui::Text("X: %.2f", DirectX::XMConvertToDegrees(rot.x));
+				ImGui::SameLine();
+				ImGui::Text("Y: %.2f", DirectX::XMConvertToDegrees(rot.y));
+				ImGui::SameLine();
+				ImGui::Text("Z: %.2f", DirectX::XMConvertToDegrees(rot.z));
+			}
+
+			if (ImGui::CollapsingHeader("Tone Map"))
+			{
+				ImGui::SliderFloat("Exposure", &exposure, 0.1f, 10.0f, "%.2f");
+
+				// Slider for Average Luminance
+				ImGui::SliderFloat("Average Luminance", &averageLuminance, 0.0f, 2.0f, "%.2f");
+
+				// Slider for Max Luminance
+				ImGui::SliderFloat("Max Luminance", &maxLuminance, 0.1f, 10.0f, "%.2f");
+
+				// Slider for Burn
+				ImGui::SliderFloat("Burn", &burn, 0.1f, 5.0f, "%.2f");
+			}
 
 		ImGui::End();
 	}
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-	m_d3d->end_scene();
+	m_d3d->present();
 
 	return true;
 }

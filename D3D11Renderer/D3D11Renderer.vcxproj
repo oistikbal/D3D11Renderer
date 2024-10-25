@@ -107,6 +107,7 @@
     <ClCompile Include="Core\light.cpp" />
     <ClCompile Include="Core\light_shader.cpp" />
     <ClCompile Include="Core\model.cpp" />
+    <ClCompile Include="Core\reinhard_shader.cpp" />
     <ClCompile Include="Core\skybox.cpp" />
     <ClCompile Include="Core\stb_image.cpp" />
     <ClCompile Include="Core\texture.cpp" />
@@ -130,6 +131,7 @@
     <ClInclude Include="Core\light.h" />
     <ClInclude Include="Core\light_shader.h" />
     <ClInclude Include="Core\model.h" />
+    <ClInclude Include="Core\reinhard_shader.h" />
     <ClInclude Include="Core\skybox.h" />
     <ClInclude Include="Core\stb_image.h" />
     <ClInclude Include="Core\texture.h" />
@@ -165,6 +167,14 @@
     <FxCompile Include="Shaders\lightvs.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\quadvs.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\reinhardps.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Pixel</ShaderType>
     </FxCompile>
     <FxCompile Include="Shaders\skyboxps.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Pixel</ShaderType>

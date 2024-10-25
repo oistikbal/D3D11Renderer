@@ -15,6 +15,7 @@ namespace d3d11renderer
 
 		void begin_scene(float red, float green, float blue, float alpha);
 		void end_scene();
+		void present();
 
 		ID3D11Device* get_device() const;
 		ID3D11DeviceContext* get_device_context() const;
@@ -33,6 +34,8 @@ namespace d3d11renderer
 		void set_culling(bool isOpen);
 		void set_depth(bool isOpen);
 
+		ID3D11ShaderResourceView* get_tonemap_srv();
+
 	private:
 		bool m_isInitialized;
 		bool m_vsync_enabled;
@@ -50,6 +53,9 @@ namespace d3d11renderer
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rasterState;
 		Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_skyRasterState;
 		Microsoft::WRL::ComPtr<ID3D11BlendState> m_blendState;
+		Microsoft::WRL::ComPtr<ID3D11Texture2D> m_toneMapTexture;
+		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_toneMapRTV;
+		Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_toneMapSRV;
 		DirectX::XMMATRIX m_projectionMatrix;
 		DirectX::XMMATRIX m_worldMatrix;
 		DirectX::XMMATRIX m_orthoMatrix;

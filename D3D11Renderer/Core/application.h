@@ -10,6 +10,7 @@
 #include "light_shader.h"
 #include "light.h"
 #include "skybox.h"
+#include "reinhard_shader.h"
 
 constexpr bool FULL_SCREEN = false;
 constexpr bool VSYNC_ENABLED = true;
@@ -38,6 +39,6 @@ namespace d3d11renderer
 		std::shared_ptr<light> m_light;
 		std::shared_ptr<light_shader> m_lightShader;
 		std::shared_ptr<skybox> m_skybox;
-
+		std::shared_ptr<reinhard_shader> m_reinhardShader;
 	};
 }
