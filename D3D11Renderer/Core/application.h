@@ -31,6 +31,7 @@ namespace d3d11renderer
 
 	private:
 		bool render(float);
+		void update_fps_plot(float deltaTime);
 	private:
 		std::shared_ptr<d3d11renderer::d3dclass> m_d3d;
 		std::shared_ptr<camera> m_camera;
@@ -40,5 +41,7 @@ namespace d3d11renderer
 		std::shared_ptr<light_shader> m_lightShader;
 		std::shared_ptr<skybox> m_skybox;
 		std::shared_ptr<reinhard_shader> m_reinhardShader;
+		std::vector<float> m_fpsHistory;
+
 	};
 }

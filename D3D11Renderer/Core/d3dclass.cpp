@@ -25,6 +25,7 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	D3D11_RASTERIZER_DESC rasterDesc = {};
 	float fieldOfView = 0.0f, screenAspect = 0.0f;
 
+
 	m_vsync_enabled = vsync;
 
 	// Create DXGI Factory
@@ -55,6 +56,8 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 	if (FAILED(result))
 		throw std::runtime_error("Failed to get display mode list with details");
 
+
+
 	// Find matching refresh rate and resolution
 	for (i = 0; i < numModes; i++)
 	{
@@ -72,9 +75,13 @@ d3d11renderer::d3dclass::d3dclass(int screenWidth, int screenHeight, bool vsync,
 
 	// Store video card memory and description
 	m_videoCardMemory = static_cast<int>(adapterDesc.DedicatedVideoMemory / 1024 / 1024);
-	error = wcstombs_s(&stringLength, m_videoCardDescription, 128, adapterDesc.Description, 128);
-	if (error != 0)
-		throw std::runtime_error("Failed to convert video card description to string");
+
+	DXGI_OUTPUT_DESC outputDesc;
+	adapterOutput->GetDesc(&outputDesc);
+
+	int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, adapterDesc.Description, -1, nullptr, 0, nullptr, nullptr);
+	m_videoCardDescription.resize(sizeNeeded);
+	WideCharToMultiByte(CP_UTF8, 0, adapterDesc.Description, -1, &m_videoCardDescription[0], sizeNeeded, nullptr, nullptr);
 
 
 	delete[] displayModeList;
@@ -377,11 +384,14 @@ void d3d11renderer::d3dclass::get_ortho_matrix(DirectX::XMMATRIX& orthoMatrix)
 	return;
 }
 
-void d3d11renderer::d3dclass::get_video_card_info(char* cardName, int& memory)
+int d3d11renderer::d3dclass::get_gpu_memory()
 {
-	strcpy_s(cardName, 128, m_videoCardDescription);
-	memory = m_videoCardMemory;
-	return;
+	return m_videoCardMemory;
+}
+
+std::string d3d11renderer::d3dclass::get_gpu_name()
+{
+	return m_videoCardDescription;
 }
 
 void d3d11renderer::d3dclass::set_back_buffer_render_target()

@@ -25,7 +25,7 @@ float CalculateLuminance(float3 color)
 float4 main(VS_OUTPUT input) : SV_Target
 {
     int2 texCoords = int2(input.Position.xy); // Convert to int2 for Load function
-    float4 hdrColor = HDRTexture.Load(texCoords, 0); // Sample with sample index 0
+    float4 hdrColor = HDRTexture.Load(texCoords, 4); // Sample with sample index 0
 
     // Calculate the luminance of the HDR color
     float luminance = CalculateLuminance(hdrColor.rgb);

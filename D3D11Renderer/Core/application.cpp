@@ -47,12 +47,12 @@ bool d3d11renderer::application::frame(float deltaTime)
 	bool result;
 
 	// Render the graphics scene.
+	update_fps_plot(deltaTime);
 	result = render(deltaTime);
 	if (!result)
 	{
 		return false;
 	}
-
 	return true;
 }
 
@@ -153,6 +153,12 @@ bool d3d11renderer::application::render(float deltaTime)
 				ImGui::Text("Fps:");
 				ImGui::SameLine();
 				ImGui::Text("%.2f", 1.0f / deltaTime);
+				ImGui::PlotLines("FPS", m_fpsHistory.data(), static_cast<int>(m_fpsHistory.size()), 0, nullptr, 0.0f, 100.0f, ImVec2(0, 80));
+
+
+				ImGui::Text("Video Card: %s", m_d3d->get_gpu_name().c_str());
+
+				ImGui::Text("Video Card Memory: %d MB", m_d3d->get_gpu_memory());
 			}
 
 			if (ImGui::CollapsingHeader("Camera"))
@@ -198,4 +204,15 @@ bool d3d11renderer::application::render(float deltaTime)
 	m_d3d->present();
 
 	return true;
+}
+
+void d3d11renderer::application::update_fps_plot(float deltaTime)
+{
+	float fps = (deltaTime > 0.0f) ? (1.0f / deltaTime) : 0.0f;
+
+	// Store FPS in history
+	m_fpsHistory.push_back(fps);
+	if (m_fpsHistory.size() > 100) {
+		m_fpsHistory.erase(m_fpsHistory.begin()); // Maintain the last 100 FPS values
+	}
 }

@@ -24,7 +24,9 @@ namespace d3d11renderer
 		void get_world_matrix(DirectX::XMMATRIX& worldMatrix);
 		void get_ortho_matrix(DirectX::XMMATRIX& orthoMatrix);
 
-		void get_video_card_info(char* cardName, int& memory);
+		int get_gpu_memory();
+		std::string get_gpu_name();
+		std::string  get_monitor_name();
 
 		void set_back_buffer_render_target();
 		void reset_viewport();
@@ -40,7 +42,7 @@ namespace d3d11renderer
 		bool m_isInitialized;
 		bool m_vsync_enabled;
 		int m_videoCardMemory;
-		char m_videoCardDescription[128];
+		std::string m_videoCardDescription;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_swapChain;
 		Microsoft::WRL::ComPtr<ID3D11Device> m_device;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_deviceContext;
