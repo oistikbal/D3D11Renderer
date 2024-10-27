@@ -22,6 +22,17 @@ float CalculateLuminance(float3 color)
     return dot(color, float3(0.2126, 0.7152, 0.0722));
 }
 
+// ACES approximation function
+float3 ACESFilm(float3 x)
+{
+    const float a = 2.51;
+    const float b = 0.03;
+    const float c = 2.43;
+    const float d = 0.59;
+    const float e = 0.14;
+    return saturate((x * (a * x + b)) / (x * (c * x + d) + e));
+}
+
 float4 main(VS_OUTPUT input) : SV_Target
 {
     int2 texCoords = int2(input.Position.xy); // Convert to int2 for Load function
@@ -30,19 +41,19 @@ float4 main(VS_OUTPUT input) : SV_Target
     // Calculate the luminance of the HDR color
     float luminance = CalculateLuminance(hdrColor.rgb);
 
-    // Apply Reinhard tone mapping with exposure adjustment
-    float3 toneMappedColor = hdrColor.rgb * Exposure; // Adjust for exposure
-    toneMappedColor /= (toneMappedColor + float3(1.0, 1.0, 1.0)); // Reinhard normalization
+    // Apply exposure adjustment
+    float3 color = hdrColor.rgb * Exposure;
 
-    // Use the scene's average luminance for scaling
-    toneMappedColor /= (AverageLuminance + 1e-5); // Avoid division by zero
+    // Tone mapping using ACES
+    color = ACESFilm(color);
 
-    // Apply maximum luminance threshold
-    toneMappedColor = min(toneMappedColor, MaxLuminance);
+    // Apply gamma correction (assuming sRGB gamma of 2.2)
+    color = pow(color, 1.0 / 2.2);
 
-    // Use burn to control clamping and prevent overexposure
-    toneMappedColor = saturate(toneMappedColor / Burn);
+    // Cap luminance and control clamping
+    color = min(color, MaxLuminance);
+    color = saturate(color / Burn);
 
-    // Return the final color with tone mapping applied
-    return float4(toneMappedColor, hdrColor.a);
+    // Return the final color with tone mapping and gamma correction applied
+    return float4(color, hdrColor.a);
 }

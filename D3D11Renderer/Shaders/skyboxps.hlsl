@@ -1,5 +1,5 @@
 // Pixel Shader (skyboxps.hlsl)
-Texture2D panoramaTexture : register(t0); // Single panoramic texture
+Texture2D<float4> panoramaTexture : register(t0); // Single panoramic texture
 SamplerState SampleType : register(s0);
 
 struct VS_OUTPUT

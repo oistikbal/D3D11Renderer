@@ -32,7 +32,7 @@ light_shader::~light_shader()
 {
 }
 
-bool light_shader::render(ID3D11DeviceContext* deviceContext, int indexCount, DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix,
+bool light_shader::render(ID3D11DeviceContext* deviceContext, int indexCount, int startIndex, DirectX::XMMATRIX worldMatrix, DirectX::XMMATRIX viewMatrix, DirectX::XMMATRIX projectionMatrix,
     ID3D11ShaderResourceView* diffuse, ID3D11ShaderResourceView* normal, ID3D11ShaderResourceView* specular, ID3D11ShaderResourceView* ao, ID3D11ShaderResourceView* emissive, ID3D11ShaderResourceView* metal,
     DirectX::XMFLOAT3 lightDirection, DirectX::XMFLOAT4 diffuseColor,
     DirectX::XMFLOAT4 ambientColor, DirectX::XMFLOAT3 cameraPosition, DirectX::XMFLOAT4 specularColor, float specularPower)
@@ -50,7 +50,7 @@ bool light_shader::render(ID3D11DeviceContext* deviceContext, int indexCount, Di
     }
 
     // Now render the prepared buffers with the shader.
-    render_shader(deviceContext, indexCount);
+    render_shader(deviceContext, indexCount, startIndex);
 
     return true;
 }
@@ -186,7 +186,7 @@ bool light_shader::set_shader_parameters(ID3D11DeviceContext* deviceContext, Dir
     return true;
 }
 
-void light_shader::render_shader(ID3D11DeviceContext* deviceContext, int indexCount)
+void light_shader::render_shader(ID3D11DeviceContext* deviceContext, int indexCount, int startIndex)
 {
     deviceContext->IASetInputLayout(m_layout.Get());
 
@@ -198,7 +198,7 @@ void light_shader::render_shader(ID3D11DeviceContext* deviceContext, int indexCo
     deviceContext->PSSetSamplers(0, 1, m_sampleState.GetAddressOf());
 
     // Render the triangle.
-    deviceContext->DrawIndexed(indexCount, 0, 0);
+    deviceContext->DrawIndexed(indexCount, startIndex, 0);
 
     return;
 }

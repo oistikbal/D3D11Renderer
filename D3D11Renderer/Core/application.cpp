@@ -21,9 +21,13 @@ d3d11renderer::application::application(int screenWidth, int screenHeight, HWND 
 		m_light->set_specular_power(256.0f);
 		m_skybox = std::make_shared<skybox>(m_d3d->get_device(), m_d3d->get_device_context(), L"Skyboxes/kloppenheim_06_puresky_4k.hdr");
 		m_reinhardShader = std::make_shared<reinhard_shader>(m_d3d->get_device(), hwnd);
+		m_scene_values[0] = false;
+		m_scene_values[1] = false;
+		m_scene_values[2] = false;
 
-
-		m_model = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/DamagedHelmet/DamagedHelmet.gltf", "Models/DamagedHelmet");
+		m_sponza = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/Sponza/Sponza.gltf", "Models/Sponza");
+		m_damagedHelmet = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/DamagedHelmet/DamagedHelmet.gltf", "Models/DamagedHelmet");
+		m_scifiHelmet = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/SciFiHelmet/SciFiHelmet.gltf", "Models/SciFiHelmet");
 		m_sphere = std::make_shared<model>(m_d3d->get_device(), m_d3d->get_device_context(), "Models/sphere.gltf", "Models/");
 		ImGui_ImplDX11_Init(m_d3d->get_device(), m_d3d->get_device_context());
 	}
@@ -103,39 +107,94 @@ bool d3d11renderer::application::render(float deltaTime)
 	}
 
 
-	worldMatrix = DirectX::XMMatrixRotationY(rotation);
-	worldMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2), worldMatrix);
+	//worldMatrix = DirectX::XMMatrixRotationY(rotation);
+	//worldMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixRotationX(DirectX::XM_PIDIV2), worldMatrix);
+	//worldMatrix = DirectX::XMMatrixMultiply(DirectX::XMMatrixScaling(0.1f,0.1f,0.1f), worldMatrix);
 
 
-	// Put the model vertex and index buffers on the graphics pipeline to prepare them for drawing.
-	m_model->render(m_d3d->get_device_context());
+	switch (m_current_scene) {
+	case scene_state::DamagedHelmet:
+		m_damagedHelmet->render(m_d3d->get_device_context());
 
-	for (const auto& subMesh : m_model->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
-	{
-		// Retrieve the texture associated with the current sub-mesh
-		ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr;
-		ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr;
-		ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr;
-		ID3D11ShaderResourceView* ao = subMesh.aoTexture ? subMesh.aoTexture->get_texture() : nullptr;
-		ID3D11ShaderResourceView* emissive = subMesh.emissiveTexture ? subMesh.emissiveTexture->get_texture() : nullptr;
-		ID3D11ShaderResourceView* metal = subMesh.metalRoughnessTexture ? subMesh.metalRoughnessTexture->get_texture() : nullptr;
+		for (const auto& subMesh : m_damagedHelmet->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
+		{
+			// Retrieve the texture associated with the current sub-mesh
+			ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* ao = subMesh.aoTexture ? subMesh.aoTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* emissive = subMesh.emissiveTexture ? subMesh.emissiveTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* metal = subMesh.metalRoughnessTexture ? subMesh.metalRoughnessTexture->get_texture() : nullptr;
 
-		// Set shader parameters, including the texture
-		result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, worldMatrix, viewMatrix, projectionMatrix,
-			diffuse, normal, specular, ao, emissive, metal,
-			m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
-			m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
+			// Set shader parameters, including the texture
+			result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, subMesh.startIndex, worldMatrix, viewMatrix, projectionMatrix,
+				diffuse, normal, specular, ao, emissive, metal,
+				m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
+				m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
 
-		// Optionally, check the result for errors
-		if (!result) {
-			// Handle any rendering errors
+			// Optionally, check the result for errors
+			if (!result) {
+				// Handle any rendering errors
+			}
 		}
+		break;
+	case scene_state::ScifiHelmet:
+		m_scifiHelmet->render(m_d3d->get_device_context());
+
+		for (const auto& subMesh : m_scifiHelmet->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
+		{
+			// Retrieve the texture associated with the current sub-mesh
+			ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* ao = subMesh.aoTexture ? subMesh.aoTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* emissive = subMesh.emissiveTexture ? subMesh.emissiveTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* metal = subMesh.metalRoughnessTexture ? subMesh.metalRoughnessTexture->get_texture() : nullptr;
+
+			// Set shader parameters, including the texture
+			result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, subMesh.startIndex, worldMatrix, viewMatrix, projectionMatrix,
+				diffuse, normal, specular, ao, emissive, metal,
+				m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
+				m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
+
+			// Optionally, check the result for errors
+			if (!result) {
+				// Handle any rendering errors
+			}
+		}
+		break;
+	case scene_state::Sponza:
+		m_sponza->render(m_d3d->get_device_context());
+
+		for (const auto& subMesh : m_sponza->get_sub_meshes()) // Assuming get_sub_meshes() returns a collection of sub-mesh data
+		{
+			// Retrieve the texture associated with the current sub-mesh
+			ID3D11ShaderResourceView* diffuse = subMesh.diffuseTexture ? subMesh.diffuseTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* normal = subMesh.normalTexture ? subMesh.normalTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* specular = subMesh.specularTexture ? subMesh.specularTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* ao = subMesh.aoTexture ? subMesh.aoTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* emissive = subMesh.emissiveTexture ? subMesh.emissiveTexture->get_texture() : nullptr;
+			ID3D11ShaderResourceView* metal = subMesh.metalRoughnessTexture ? subMesh.metalRoughnessTexture->get_texture() : nullptr;
+
+			// Set shader parameters, including the texture
+			result = m_lightShader->render(m_d3d->get_device_context(), subMesh.indexCount, subMesh.startIndex, worldMatrix, viewMatrix, projectionMatrix,
+				diffuse, normal, specular, ao, emissive, metal,
+				m_light->get_direction(), m_light->get_diffuse_color(), m_light->get_ambient_color(),
+				m_camera->get_position(), m_light->get_specular_color(), m_light->get_specular_power());
+
+			// Optionally, check the result for errors
+			if (!result) {
+				// Handle any rendering errors
+			}
+		}
+		break;
 	}
+
 
 	m_d3d->end_scene();
 
-	static float exposure = 1.0f;         // Initial exposure
-	static float averageLuminance = 0.5f; // Average luminance
+	static float exposure = 0.6f;         // Initial exposure
+	static float averageLuminance = 1.0f; // Average luminance
 	static float maxLuminance = 1.0f;     // Maximum luminance for clamping
 	static float burn = 1.0f;             // Burn threshold for tone mapping
 
@@ -194,6 +253,27 @@ bool d3d11renderer::application::render(float deltaTime)
 
 				// Slider for Burn
 				ImGui::SliderFloat("Burn", &burn, 0.1f, 5.0f, "%.2f");
+			}
+
+			if (ImGui::CollapsingHeader("Scene"))
+			{
+				ImGui::Text("Select Scene:");
+
+				for (int i = 0; i < 3; ++i) {
+					ImGui::SameLine();
+					if (ImGui::Checkbox(("Scene " + std::to_string(i + 1)).c_str(), &m_scene_values[i])) {
+						// If this checkbox is checked, set it as the current scene
+						if (m_scene_values[i]) {
+							m_current_scene = static_cast<scene_state>(i);
+							// Uncheck all other checkboxes
+							for (int j = 0; j < 3; ++j) {
+								if (j != i) {
+									m_scene_values[j] = false;
+								}
+							}
+						}
+					}
+				}
 			}
 
 		ImGui::End();

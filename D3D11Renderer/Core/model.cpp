@@ -191,7 +191,8 @@ bool model::load_texture(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 bool model::load_model(ID3D11Device* device, ID3D11DeviceContext* deviceContext,const char* modelfilename, const char* mtlPath)
 {
 	Assimp::Importer importer;
-	const aiScene* scene = importer.ReadFile(modelfilename, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+	const aiScene* scene = importer.ReadFile(modelfilename, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace |
+		aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_PreTransformVertices );
 
 	// Check for errors
 	if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
@@ -264,6 +265,7 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 
 	// Create the SubMesh for this mesh
 	SubMesh subMesh;
+	subMesh.startIndex = m_indices.size();  // Set startIndex to current index count
 	subMesh.indexCount = indices.size();
 
 	// Handle materials and assign textures
