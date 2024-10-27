@@ -231,6 +231,9 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 	std::vector<VertexType> vertices;
 	std::vector<unsigned int> indices;
 
+	// Keep track of the starting index in the global vertex buffer
+	unsigned int vertexStartIndex = m_vertices.size(); // Starting index for this submesh
+
 	// Process vertices
 	for (unsigned int i = 0; i < mesh->mNumVertices; i++) {
 		VertexType vertex;
@@ -252,20 +255,21 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 			vertex.bitangent = DirectX::XMFLOAT3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z);
 		}
 
-		vertices.push_back(vertex);
+		vertices.push_back(vertex); // Add to local vertex list
 	}
 
 	// Process indices
 	for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
 		aiFace face = mesh->mFaces[i];
 		for (unsigned int j = 0; j < face.mNumIndices; j++) {
-			indices.push_back(face.mIndices[j]);
+			// Adjust index to point to the correct vertex in the global vertex buffer
+			indices.push_back(face.mIndices[j] + vertexStartIndex);
 		}
 	}
 
 	// Create the SubMesh for this mesh
 	SubMesh subMesh;
-	subMesh.startIndex = m_indices.size();  // Set startIndex to current index count
+	subMesh.startIndex = m_indices.size(); // Set the start index for this submesh
 	subMesh.indexCount = indices.size();
 
 	// Handle materials and assign textures
@@ -288,6 +292,7 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 			subMesh.specularTexture = m_textures[texturePath.C_Str()];
 		}
 
+		// Assign Ambient Occlusion (AO) map texture
 		if (material->GetTexture(aiTextureType_LIGHTMAP, 0, &texturePath) == AI_SUCCESS) {
 			subMesh.aoTexture = m_textures[texturePath.C_Str()];
 		}
@@ -303,9 +308,9 @@ void model::process_mesh(ID3D11Device* device, ID3D11DeviceContext* deviceContex
 		}
 	}
 
-	// Store the vertices, indices, and subMesh
+	// Store the vertices and indices
 	m_vertices.insert(m_vertices.end(), vertices.begin(), vertices.end());
 	m_indices.insert(m_indices.end(), indices.begin(), indices.end());
 	m_submeshes.push_back(subMesh);
-
 }
+
