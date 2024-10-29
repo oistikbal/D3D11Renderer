@@ -31,6 +31,7 @@ struct PixelInputType
 float4 main(PixelInputType input) : SV_TARGET
 {
     float4 textureColor;
+    float4 emissive;
     float3 lightDir;
     float lightIntensity;
     float4 color;
@@ -39,14 +40,11 @@ float4 main(PixelInputType input) : SV_TARGET
     float3 normalTangentSpace;
     float3 normalWorldSpace;
 
-    // Sample the diffuse texture (or base color in PBR)
-    textureColor = diffuseMap.Sample(SampleType, input.tex);
+    textureColor = pow(diffuseMap.Sample(SampleType, input.tex), 2.2); // Convert diffuse to linear space
+    emissive = pow(emissiveMap.Sample(SampleType, input.tex), 2.2); // Convert emissive to linear space
 
     // Sample the AO map (ambient occlusion) and factor it into ambient lighting
     float ao = aoMap.Sample(SampleType, input.tex).r;
-
-    // Sample the Emissive map
-    float4 emissive = emissiveMap.Sample(SampleType, input.tex);
 
     // Sample the metal-roughness map and extract metalness and roughness
     float4 metalRoughness = metalRoughnessMap.Sample(SampleType, input.tex);
