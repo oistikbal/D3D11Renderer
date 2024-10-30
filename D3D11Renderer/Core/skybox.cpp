@@ -195,4 +195,6 @@ void skybox::set_shader_parameters(ID3D11DeviceContext* deviceContext, DirectX::
 
     // Set shader texture resource in the pixel shader.
     deviceContext->PSSetShaderResources(0, 1, m_cubemapSRV.GetAddressOf());
+    ID3D11Buffer* nullBuffer = nullptr;
+    deviceContext->PSSetConstantBuffers(0, 1, &nullBuffer);
 }

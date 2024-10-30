@@ -257,10 +257,7 @@ bool d3d11renderer::application::render(float deltaTime)
 
 			if (ImGui::CollapsingHeader("Scene"))
 			{
-				ImGui::Text("Select Scene:");
-
 				for (int i = 0; i < 3; ++i) {
-					ImGui::SameLine();
 					if (ImGui::Checkbox(("Scene " + std::to_string(i + 1)).c_str(), &m_scene_values[i])) {
 						// If this checkbox is checked, set it as the current scene
 						if (m_scene_values[i]) {
@@ -273,6 +270,7 @@ bool d3d11renderer::application::render(float deltaTime)
 							}
 						}
 					}
+					ImGui::SameLine();
 				}
 			}
 

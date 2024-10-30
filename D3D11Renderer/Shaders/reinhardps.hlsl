@@ -16,12 +16,6 @@ cbuffer ToneMappingParams : register(b0)
     float Padding; // Padding for alignment
 };
 
-// Helper function to calculate luminance
-float CalculateLuminance(float3 color)
-{
-    return dot(color, float3(0.2126, 0.7152, 0.0722));
-}
-
 // ACES approximation function
 float3 ACESFilm(float3 x)
 {
@@ -38,21 +32,13 @@ float4 main(VS_OUTPUT input) : SV_Target
     int2 texCoords = int2(input.Position.xy); // Convert to int2 for Load function
     float4 hdrColor = HDRTexture.Load(texCoords, 4); // Sample with sample index 0
 
-    // Calculate the luminance of the HDR color
-    float luminance = CalculateLuminance(hdrColor.rgb);
-
-    // Apply exposure adjustment
     float3 color = hdrColor.rgb * Exposure;
 
-    // Tone mapping using ACES
+    // Apply ACES tone mapping
     color = ACESFilm(color);
 
-    // Apply gamma correction (assuming sRGB gamma of 2.2)
+    // Convert from linear space to sRGB space with gamma correction (gamma 2.2)
     color = pow(color, 1.0 / 2.2);
-
-    // Cap luminance and control clamping
-    color = min(color, MaxLuminance);
-    color = saturate(color / Burn);
 
     // Return the final color with tone mapping and gamma correction applied
     return float4(color, hdrColor.a);

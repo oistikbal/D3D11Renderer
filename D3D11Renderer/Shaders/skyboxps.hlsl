@@ -11,7 +11,7 @@ struct VS_OUTPUT
 float4 main(VS_OUTPUT input) : SV_TARGET
 {
     // Sample the panorama texture using the input texture coordinates
-    float4 color = panoramaTexture.Sample(SampleType, input.texCoords);
+    float4 color = pow(panoramaTexture.Sample(SampleType, input.texCoords), 2.2);
 
     return color;
 }
